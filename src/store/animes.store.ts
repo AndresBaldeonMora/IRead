@@ -14,6 +14,7 @@ interface AnimesState {
   updateAnime: (id: string, patch: Partial<AnimeInput>) => Promise<void>;
   deleteAnime: (id: string) => Promise<void>;
   advanceEp: (id: string, delta?: number) => Promise<void>;
+  setRating: (id: string, rating: number | null) => Promise<void>;
 }
 
 export const useAnimesStore = create<AnimesState>((set, get) => ({
@@ -69,6 +70,18 @@ export const useAnimesStore = create<AnimesState>((set, get) => ({
       await queries.updateAnime(id, { vistos, estado });
     } catch (e) {
       console.error('advanceEp failed', e);
+      await get().loadAnimes();
+    }
+  },
+
+  setRating: async (id, rating) => {
+    set((state) => ({
+      animes: state.animes.map((a) => (a.id === id ? { ...a, rating } : a)),
+    }));
+    try {
+      await queries.updateAnime(id, { rating } as never);
+    } catch (e) {
+      console.error('setRating failed', e);
       await get().loadAnimes();
     }
   },

@@ -80,6 +80,7 @@ export interface Anime {
   anio: number;
   color: string;
   notas: string | null;
+  rating: number | null;
   agregado_en: string;
   actualizado_en: string;
 }

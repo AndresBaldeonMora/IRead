@@ -32,7 +32,7 @@ export function AnimeAddModal({
   const [serie, setSerie] = useState<AnimeSerie>('emision');
   const [estado, setEstado] = useState<AnimeEstado>('viendo');
 
-  const canSave = titulo.trim() && parseInt(eps, 10) > 0;
+  const canSave = titulo.trim() && (tipo === 'pelicula' || parseInt(eps, 10) > 0);
   const accent = ANIME_STATUS[estado].glow;
 
   const reset = () => {
@@ -48,7 +48,7 @@ export function AnimeAddModal({
 
   const handleSave = async () => {
     if (!canSave) return;
-    const totalEps = parseInt(eps, 10);
+    const totalEps = tipo === 'pelicula' ? 1 : parseInt(eps, 10);
     await addAnime({
       titulo: titulo.trim(),
       tipo,
@@ -109,12 +109,16 @@ export function AnimeAddModal({
               })}
             </View>
 
-            <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
               {tipo === 'serie' && (
                 <Field label="Temporada" value={temporada} onChange={setTemporada} placeholder="1" keyboard="numeric" flex />
               )}
-              <Field label="Eps. totales" value={eps} onChange={setEps} placeholder="12" keyboard="numeric" flex />
-              <Field label="Eps. vistos" value={vistos} onChange={setVistos} placeholder="0" keyboard="numeric" flex />
+              {tipo !== 'pelicula' && (
+                <Field label="Eps. totales" value={eps} onChange={setEps} placeholder="12" keyboard="numeric" flex />
+              )}
+              {tipo !== 'pelicula' && (
+                <Field label="Eps. vistos" value={vistos} onChange={setVistos} placeholder="0" keyboard="numeric" flex />
+              )}
               <Field label="Año" value={anio} onChange={setAnio} placeholder="2024" keyboard="numeric" flex />
             </View>
 
@@ -255,7 +259,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.4,
     textTransform: 'uppercase',
     color: ANIME.textSoft,
-    marginBottom: 7,
+    marginBottom: 6,
     marginTop: 12,
     paddingLeft: 2,
   },

@@ -92,6 +92,7 @@ export async function initializeDatabase(): Promise<void> {
   await runMigrationV2();
   await runMigrationV3();
   await runMigrationV4();
+  await runMigrationV5();
   await clearTestDataOnce();
   await seedIfEmpty();
   await seedAnimesIfEmpty();
@@ -181,6 +182,21 @@ async function runMigrationV4(): Promise<void> {
 
   await db.runAsync(
     "INSERT OR REPLACE INTO settings (clave, valor, actualizado_en) VALUES ('schema_v4', '1', ?)",
+    [new Date().toISOString()]
+  );
+}
+
+async function runMigrationV5(): Promise<void> {
+  const db = await getDatabase();
+  const done = await db.getFirstAsync<{ valor: string }>(
+    "SELECT valor FROM settings WHERE clave = 'schema_v5'"
+  );
+  if (done) return;
+
+  try { await db.runAsync('ALTER TABLE animes ADD COLUMN rating INTEGER'); } catch { /* columna ya existe */ }
+
+  await db.runAsync(
+    "INSERT OR REPLACE INTO settings (clave, valor, actualizado_en) VALUES ('schema_v5', '1', ?)",
     [new Date().toISOString()]
   );
 }

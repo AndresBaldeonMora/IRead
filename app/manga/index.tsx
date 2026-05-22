@@ -53,7 +53,7 @@ export default function MangaDashboard() {
       <LinearGradient colors={[MANGA.bgTop, MANGA.bgBottom]} style={StyleSheet.absoluteFill} />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 40, paddingBottom: 100 }}
+          contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 60, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           onScroll={handleSwitcherScroll}
           scrollEventThrottle={16}

@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     paddingHorizontal: 22,
-    paddingTop: 44,
+    paddingTop: 64,
     paddingBottom: 12,
   },
   kicker: { fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 },

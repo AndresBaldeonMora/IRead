@@ -15,6 +15,7 @@ interface AnimeRow {
   anio: number;
   color: string;
   notas: string | null;
+  rating: number | null;
   agregado_en: string;
   actualizado_en: string;
 }
@@ -32,6 +33,7 @@ function rowToAnime(row: AnimeRow): Anime {
     anio: row.anio,
     color: row.color,
     notas: row.notas,
+    rating: row.rating ?? null,
     agregado_en: row.agregado_en,
     actualizado_en: row.actualizado_en,
   };
@@ -106,6 +108,7 @@ export async function updateAnime(
     'anio',
     'color',
     'notas',
+    'rating',
   ];
 
   for (const col of cols) {

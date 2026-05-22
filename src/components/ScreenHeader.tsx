@@ -26,7 +26,7 @@ export function ScreenHeader({ title, subtitle }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 22, paddingTop: 52, paddingBottom: 8 },
+  container: { paddingHorizontal: 22, paddingTop: 72, paddingBottom: 8 },
   title: { fontSize: 36, fontWeight: '500', letterSpacing: -0.5 },
   subtitle: { fontSize: 16, fontStyle: 'italic', marginTop: 2 },
 });

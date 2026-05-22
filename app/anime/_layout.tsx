@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Home, List, Play, Sparkles, Plus } from 'lucide-react-native';
+import { Home, List, Star, Sparkles, Plus } from 'lucide-react-native';
 import { ANIME } from '@/utils/animeTheme';
 import { AnimeAddModal } from '@/components/anime/AnimeAddModal';
 import { SectionSwitcher } from '@/components/anime/SectionSwitcher';
@@ -67,10 +67,10 @@ export default function AnimeTabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="viendo"
+          name="valorar"
           options={{
-            title: 'Viendo',
-            tabBarIcon: ({ color, size }) => <Play size={size} color={color} fill={color} />,
+            title: 'Valorar',
+            tabBarIcon: ({ color, size }) => <Star size={size} color={color} />,
           }}
         />
         <Tabs.Screen

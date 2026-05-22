@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { BookOpen, Play, BookMarked } from 'lucide-react-native';
 import { ANIME } from '@/utils/animeTheme';
 import { MANGA } from '@/utils/mangaTheme';
+import { useSplashStore } from '@/store/splash.store';
 
 const WINE = '#7A2E3A';
 
@@ -14,7 +15,13 @@ type Section = 'books' | 'anime' | 'manga';
 export function SectionSwitcher({ section }: { section: Section }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const trigger = useSplashStore((s) => s.trigger);
   const isManga = section === 'manga';
+
+  function goTo(target: Section, path: string) {
+    if (section === target) return;
+    trigger(target, () => router.replace(path as never));
+  }
 
   const containerStyle =
     section === 'anime'
@@ -34,7 +41,7 @@ export function SectionSwitcher({ section }: { section: Section }) {
       <View style={[styles.pill, containerStyle, isManga ? styles.pillManga : null]}>
         <Seg
           active={section === 'books'}
-          onPress={() => router.replace('/')}
+          onPress={() => goTo('books', '/')}
           label="Libros"
           icon={<BookOpen size={13} color={section === 'books' ? '#FFFFFF' : inactiveColor} strokeWidth={2} />}
           activeBg={WINE}
@@ -43,7 +50,7 @@ export function SectionSwitcher({ section }: { section: Section }) {
         />
         <Seg
           active={section === 'anime'}
-          onPress={() => router.replace('/anime' as never)}
+          onPress={() => goTo('anime', '/anime')}
           label="Animes"
           icon={
             <Play
@@ -60,7 +67,7 @@ export function SectionSwitcher({ section }: { section: Section }) {
         />
         <Seg
           active={isManga}
-          onPress={() => router.replace('/manga' as never)}
+          onPress={() => goTo('manga', '/manga')}
           label="Manga"
           icon={<BookMarked size={13} color={isManga ? '#FFF7EC' : inactiveColor} strokeWidth={2} />}
           activeBg={MANGA.terracotta}

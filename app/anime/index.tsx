@@ -131,7 +131,7 @@ function StatusTile({ status, value }: { status: AnimeEstado; value: number }) {
 }
 
 const styles = StyleSheet.create({
-  headerWrap: { paddingHorizontal: 20, paddingTop: 44 },
+  headerWrap: { paddingHorizontal: 20, paddingTop: 64 },
   bigTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -0.5, color: ANIME.text },
   subtitle: { marginTop: 6, fontSize: 14, color: ANIME.textSoft },
 
