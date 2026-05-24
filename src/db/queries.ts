@@ -18,6 +18,9 @@ interface BookRow {
   actualizado_en: string;
   notas: string | null;
   imagen_url: string | null;
+  editorial: string | null;
+  edicion: string | null;
+  idioma: string | null;
 }
 
 function rowToBook(row: BookRow): Book {
@@ -37,6 +40,9 @@ function rowToBook(row: BookRow): Book {
     actualizado_en: row.actualizado_en,
     notas: row.notas,
     imagen_url: row.imagen_url,
+    editorial: row.editorial ?? null,
+    edicion: row.edicion ?? null,
+    idioma: row.idioma ?? null,
   };
 }
 
@@ -79,8 +85,8 @@ export async function insertBook(input: BookInput): Promise<Book> {
   const id = input.id ?? generateId();
 
   await db.runAsync(
-    `INSERT INTO books (id, numero, titulo, autor, fecha_salida, tengo, leido, leido_en, coleccion, formato, generos, agregado_en, actualizado_en, notas, imagen_url)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO books (id, numero, titulo, autor, fecha_salida, tengo, leido, leido_en, coleccion, formato, generos, agregado_en, actualizado_en, notas, imagen_url, editorial, edicion, idioma)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       input.numero,
@@ -97,6 +103,9 @@ export async function insertBook(input: BookInput): Promise<Book> {
       now,
       input.notas ?? null,
       input.imagen_url ?? null,
+      (input as any).editorial ?? null,
+      (input as any).edicion ?? null,
+      (input as any).idioma ?? null,
     ]
   );
 
@@ -188,6 +197,18 @@ export async function updateBook(
   if (patch.imagen_url !== undefined) {
     fields.push('imagen_url = ?');
     values.push(patch.imagen_url);
+  }
+  if ((patch as any).editorial !== undefined) {
+    fields.push('editorial = ?');
+    values.push((patch as any).editorial ?? null);
+  }
+  if ((patch as any).edicion !== undefined) {
+    fields.push('edicion = ?');
+    values.push((patch as any).edicion ?? null);
+  }
+  if ((patch as any).idioma !== undefined) {
+    fields.push('idioma = ?');
+    values.push((patch as any).idioma ?? null);
   }
 
   if (fields.length === 0) return getBookById(id);

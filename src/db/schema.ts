@@ -93,6 +93,7 @@ export async function initializeDatabase(): Promise<void> {
   await runMigrationV3();
   await runMigrationV4();
   await runMigrationV5();
+  await runMigrationV6();
   await clearTestDataOnce();
   await seedIfEmpty();
   await seedAnimesIfEmpty();
@@ -197,6 +198,28 @@ async function runMigrationV5(): Promise<void> {
 
   await db.runAsync(
     "INSERT OR REPLACE INTO settings (clave, valor, actualizado_en) VALUES ('schema_v5', '1', ?)",
+    [new Date().toISOString()]
+  );
+}
+
+async function runMigrationV6(): Promise<void> {
+  const db = await getDatabase();
+  const done = await db.getFirstAsync<{ valor: string }>(
+    "SELECT valor FROM settings WHERE clave = 'schema_v6'"
+  );
+  if (done) return;
+
+  const alterations = [
+    'ALTER TABLE books ADD COLUMN editorial TEXT',
+    'ALTER TABLE books ADD COLUMN edicion TEXT',
+    'ALTER TABLE books ADD COLUMN idioma TEXT',
+  ];
+  for (const sql of alterations) {
+    try { await db.runAsync(sql); } catch { /* columna ya existe */ }
+  }
+
+  await db.runAsync(
+    "INSERT OR REPLACE INTO settings (clave, valor, actualizado_en) VALUES ('schema_v6', '1', ?)",
     [new Date().toISOString()]
   );
 }

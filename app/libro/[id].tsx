@@ -10,10 +10,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, BookOpen, Check, Trash2, Save, Smartphone } from 'lucide-react-native';
+import { ChevronLeft, BookOpen, Check, Trash2, Save, Smartphone, Pencil } from 'lucide-react-native';
 import { useBooksStore } from '@/store/books.store';
 import { useColors, useSerifFamily } from '@/store/theme.store';
 import { formatDate } from '@/utils/formatters';
+import { AddBookModal } from '@/components/AddBookModal';
 
 export default function BookDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,6 +30,7 @@ export default function BookDetail() {
 
   const [notas, setNotas] = useState(book?.notas ?? '');
   const [dirty, setDirty] = useState(false);
+  const [editVisible, setEditVisible] = useState(false);
 
   useEffect(() => {
     setNotas(book?.notas ?? '');
@@ -106,12 +108,23 @@ export default function BookDetail() {
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <ChevronLeft size={28} color={c.ink} />
         </Pressable>
-        {!esNovelaEterna && (
-          <Pressable onPress={handleDelete} hitSlop={10}>
-            <Trash2 size={20} color={c.inkSoft} />
+        <View style={{ flexDirection: 'row', gap: 18, alignItems: 'center' }}>
+          <Pressable onPress={() => setEditVisible(true)} hitSlop={10}>
+            <Pencil size={20} color={c.inkSoft} />
           </Pressable>
-        )}
+          {!esNovelaEterna && (
+            <Pressable onPress={handleDelete} hitSlop={10}>
+              <Trash2 size={20} color={c.inkSoft} />
+            </Pressable>
+          )}
+        </View>
       </View>
+
+      <AddBookModal
+        visible={editVisible}
+        onClose={() => setEditVisible(false)}
+        bookToEdit={book}
+      />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.heroWrap}>

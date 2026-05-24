@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -13,35 +13,64 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X } from 'lucide-react-native';
+import { X, BookOpen, Calendar } from 'lucide-react-native';
 import { useColors, useSerifFamily } from '@/store/theme.store';
 import { useBooksStore } from '@/store/books.store';
-import { Formato } from '@/types';
+import { Book, Formato } from '@/types';
 import { GENEROS } from '@/utils/constants';
 
 interface Props {
   visible: boolean;
   onClose: () => void;
+  bookToEdit?: Book;
 }
 
-export function AddBookModal({ visible, onClose }: Props) {
+export function AddBookModal({ visible, onClose, bookToEdit }: Props) {
   const c = useColors();
   const serif = useSerifFamily();
   const addBook = useBooksStore((s) => s.addBook);
+  const updateBook = useBooksStore((s) => s.updateBook);
+  const isEditing = !!bookToEdit;
 
   const [titulo, setTitulo] = useState('');
   const [autor, setAutor] = useState('');
+  const [editorial, setEditorial] = useState('');
+  const [edicion, setEdicion] = useState('');
+  const [idioma, setIdioma] = useState('');
   const [tengo, setTengo] = useState(false);
   const [leido, setLeido] = useState(false);
+  const [leidoEn, setLeidoEn] = useState<string | null>(null);
   const [formato, setFormato] = useState<Formato | null>(null);
   const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [mesSheet, setMesSheet] = useState<{ visible: boolean; mes: string; label: string } | null>(null);
+
+  useEffect(() => {
+    if (bookToEdit) {
+      setTitulo(bookToEdit.titulo);
+      setAutor(bookToEdit.autor ?? '');
+      setEditorial(bookToEdit.editorial ?? '');
+      setEdicion(bookToEdit.edicion ?? '');
+      setIdioma(bookToEdit.idioma ?? '');
+      setTengo(bookToEdit.tengo);
+      setLeido(bookToEdit.leido);
+      setLeidoEn(bookToEdit.leido_en ?? null);
+      setFormato(bookToEdit.formato);
+      setSelectedGeneros(bookToEdit.generos);
+    } else {
+      reset();
+    }
+  }, [bookToEdit?.id, visible]);
 
   const reset = () => {
     setTitulo('');
     setAutor('');
+    setEditorial('');
+    setEdicion('');
+    setIdioma('');
     setTengo(false);
     setLeido(false);
+    setLeidoEn(null);
     setFormato(null);
     setSelectedGeneros([]);
   };
@@ -52,6 +81,19 @@ export function AddBookModal({ visible, onClose }: Props) {
     );
   };
 
+  const handleToggleLeido = (value: boolean) => {
+    setLeido(value);
+    if (!value) {
+      setLeidoEn(null);
+      return;
+    }
+    const now = new Date();
+    const mesActual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const MESES_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const labelMes = `${MESES_ES[now.getMonth()]} ${now.getFullYear()}`;
+    setMesSheet({ visible: true, mes: mesActual, label: labelMes });
+  };
+
   const handleSave = async () => {
     if (!titulo.trim()) {
       Alert.alert('Falta el título', 'Necesitamos saber qué libro es.');
@@ -59,20 +101,38 @@ export function AddBookModal({ visible, onClose }: Props) {
     }
     setSaving(true);
     try {
-      await addBook({
-        titulo: titulo.trim(),
-        autor: autor.trim(),
-        fecha_salida: null,
-        tengo,
-        leido,
-        leido_en: null,
-        coleccion: 'mi_biblioteca',
-        formato,
-        generos: selectedGeneros,
-        notas: null,
-        imagen_url: null,
-      });
-      reset();
+      if (isEditing && bookToEdit) {
+        await updateBook(bookToEdit.id, {
+          titulo: titulo.trim(),
+          autor: autor.trim(),
+          tengo: formato !== 'digital' ? tengo : false,
+          leido,
+          leido_en: leido ? leidoEn : null,
+          formato,
+          generos: selectedGeneros,
+          editorial: editorial.trim() || null,
+          edicion: edicion.trim() || null,
+          idioma: idioma.trim() || null,
+        } as any);
+      } else {
+        await addBook({
+          titulo: titulo.trim(),
+          autor: autor.trim(),
+          fecha_salida: null,
+          tengo,
+          leido,
+          leido_en: leido ? leidoEn : null,
+          coleccion: 'mi_biblioteca',
+          formato,
+          generos: selectedGeneros,
+          notas: null,
+          imagen_url: null,
+          editorial: editorial.trim() || null,
+          edicion: edicion.trim() || null,
+          idioma: idioma.trim() || null,
+        } as any);
+        reset();
+      }
       onClose();
     } catch (e) {
       Alert.alert('Error', 'No se pudo guardar el libro.');
@@ -96,12 +156,29 @@ export function AddBookModal({ visible, onClose }: Props) {
         >
           <View style={styles.header}>
             <Text style={[styles.title, { color: c.wineDeep, fontFamily: serif }]}>
-              Nuevo libro
+              {isEditing ? 'Editar libro' : 'Nuevo libro'}
             </Text>
             <Pressable onPress={onClose} hitSlop={10}>
               <X size={26} color={c.ink} />
             </Pressable>
           </View>
+
+          {mesSheet && (
+            <MesSheet
+              visible={mesSheet.visible}
+              label={mesSheet.label}
+              c={c}
+              serif={serif}
+              onGuardar={() => {
+                setLeidoEn(mesSheet.mes);
+                setMesSheet(null);
+              }}
+              onSinMes={() => {
+                setLeidoEn(null);
+                setMesSheet(null);
+              }}
+            />
+          )}
 
           <ScrollView contentContainerStyle={styles.body}>
             <Field label="Título" color={c.inkSoft}>
@@ -121,6 +198,38 @@ export function AddBookModal({ visible, onClose }: Props) {
                 color={c}
               />
             </Field>
+
+            <Field label="Editorial" color={c.inkSoft}>
+              <Input
+                value={editorial}
+                onChangeText={setEditorial}
+                placeholder="Planeta, Salamandra…"
+                color={c}
+              />
+            </Field>
+
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Field label="Edición" color={c.inkSoft}>
+                  <Input
+                    value={edicion}
+                    onChangeText={setEdicion}
+                    placeholder="1ª ed."
+                    color={c}
+                  />
+                </Field>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Field label="Idioma" color={c.inkSoft}>
+                  <Input
+                    value={idioma}
+                    onChangeText={setIdioma}
+                    placeholder="Español"
+                    color={c}
+                  />
+                </Field>
+              </View>
+            </View>
 
             <Field label="Formato" color={c.inkSoft}>
               <View style={styles.genreGrid}>
@@ -200,7 +309,7 @@ export function AddBookModal({ visible, onClose }: Props) {
               label="Ya lo leí"
               hint="Lo terminé de leer"
               value={leido}
-              onChange={setLeido}
+              onChange={handleToggleLeido}
               c={c}
               serif={serif}
             />
@@ -214,7 +323,7 @@ export function AddBookModal({ visible, onClose }: Props) {
               ]}
             >
               <Text style={[styles.saveTxt, { color: c.paperCard, fontFamily: serif }]}>
-                {saving ? 'Guardando…' : 'Guardar libro'}
+                {saving ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Guardar libro'}
               </Text>
             </Pressable>
           </ScrollView>
@@ -304,6 +413,160 @@ function Input(props: {
   );
 }
 
+function MesSheet({
+  visible,
+  label,
+  c,
+  serif,
+  onGuardar,
+  onSinMes,
+}: {
+  visible: boolean;
+  label: string;
+  c: ReturnType<typeof useColors>;
+  serif: string;
+  onGuardar: () => void;
+  onSinMes: () => void;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={onSinMes}
+    >
+      <Pressable style={sheetStyles.backdrop} onPress={onSinMes} />
+      <View style={[sheetStyles.sheet, { backgroundColor: c.paper }]}>
+        {/* Pill handle */}
+        <View style={[sheetStyles.handle, { backgroundColor: c.rule }]} />
+
+        {/* Icono + kicker */}
+        <View style={sheetStyles.iconRow}>
+          <View style={[sheetStyles.iconCircle, { backgroundColor: c.roseSoft }]}>
+            <Calendar size={22} color={c.wine} />
+          </View>
+        </View>
+
+        <Text style={[sheetStyles.kicker, { color: c.gold }]}>· mes de lectura ·</Text>
+        <Text style={[sheetStyles.monthLabel, { color: c.wineDeep, fontFamily: serif }]}>
+          {label}
+        </Text>
+        <Text style={[sheetStyles.subtitle, { color: c.inkSoft }]}>
+          ¿Registrar este mes como cuando lo terminaste?
+        </Text>
+
+        {/* Botón principal */}
+        <Pressable
+          onPress={onGuardar}
+          style={({ pressed }) => [
+            sheetStyles.btnPrimary,
+            { backgroundColor: c.wine, opacity: pressed ? 0.85 : 1 },
+          ]}
+        >
+          <BookOpen size={18} color={c.paperCard} />
+          <Text style={[sheetStyles.btnPrimaryTxt, { color: c.paperCard, fontFamily: serif }]}>
+            Sí, guardar mes
+          </Text>
+        </Pressable>
+
+        {/* Botón secundario */}
+        <Pressable
+          onPress={onSinMes}
+          style={({ pressed }) => [
+            sheetStyles.btnSecondary,
+            { borderColor: c.rule, opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
+          <Text style={[sheetStyles.btnSecondaryTxt, { color: c.inkSoft }]}>
+            No, sin mes
+          </Text>
+        </Pressable>
+      </View>
+    </Modal>
+  );
+}
+
+const sheetStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  sheet: {
+    paddingHorizontal: 28,
+    paddingTop: 12,
+    paddingBottom: 40,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 20,
+  },
+  iconRow: {
+    marginBottom: 16,
+  },
+  iconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kicker: {
+    fontSize: 10,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  monthLabel: {
+    fontSize: 32,
+    fontWeight: '600',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 28,
+    paddingHorizontal: 8,
+  },
+  btnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  btnPrimaryTxt: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  btnSecondary: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+  },
+  btnSecondaryTxt: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+});
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -358,4 +621,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveTxt: { fontSize: 18, fontWeight: '600' },
+  row: { flexDirection: 'row' },
 });

@@ -24,6 +24,9 @@ export interface Book {
   actualizado_en: string;
   notas: string | null;
   imagen_url: string | null;
+  editorial: string | null;
+  edicion: string | null;
+  idioma: string | null;
 }
 
 export type BookInput = Omit<Book, 'id' | 'agregado_en' | 'actualizado_en'> & {

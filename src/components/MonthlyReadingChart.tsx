@@ -1,13 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useColors, useSerifFamily } from '@/store/theme.store';
 import { MesLectura } from '@/services/statsService';
 
 interface Props {
   data: MesLectura[];
+  selectedMes?: string | null;
+  onSelectMes?: (mes: string) => void;
 }
 
-export function MonthlyReadingChart({ data }: Props) {
+export function MonthlyReadingChart({ data, selectedMes, onSelectMes }: Props) {
   const c = useColors();
   const serif = useSerifFamily();
 
@@ -29,8 +31,13 @@ export function MonthlyReadingChart({ data }: Props) {
       <View style={styles.bars}>
         {recent.map((item) => {
           const heightPct = maxCount > 0 ? item.count / maxCount : 0;
+          const isSelected = selectedMes === item.mes;
           return (
-            <View key={item.mes} style={styles.barCol}>
+            <Pressable
+              key={item.mes}
+              style={styles.barCol}
+              onPress={() => onSelectMes?.(item.mes)}
+            >
               <Text style={[styles.barCount, { color: c.wine }]}>
                 {item.count}
               </Text>
@@ -39,14 +46,14 @@ export function MonthlyReadingChart({ data }: Props) {
                   style={[
                     styles.barFill,
                     {
-                      backgroundColor: c.wine,
+                      backgroundColor: isSelected ? c.gold : c.wine,
                       height: `${Math.round(heightPct * 100)}%`,
                     },
                   ]}
                 />
               </View>
               <Text
-                style={[styles.barLabel, { color: c.inkSoft }]}
+                style={[styles.barLabel, { color: isSelected ? c.wine : c.inkSoft, fontWeight: isSelected ? '800' : '600' }]}
                 numberOfLines={1}
               >
                 {item.label.split(' ')[0]}
@@ -54,7 +61,7 @@ export function MonthlyReadingChart({ data }: Props) {
               <Text style={[styles.barYear, { color: c.inkSoft }]} numberOfLines={1}>
                 {item.label.split(' ')[1] ?? ''}
               </Text>
-            </View>
+            </Pressable>
           );
         })}
       </View>

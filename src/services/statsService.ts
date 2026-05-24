@@ -51,3 +51,15 @@ export function lecturasPorMes(books: Book[]): MesLectura[] {
     })
     .sort((a, b) => a.mes.localeCompare(b.mes));
 }
+
+export function formatMesLargo(mes: string): string {
+  const [year, month] = mes.split('-');
+  const mesIdx = parseInt(month, 10) - 1;
+  return `${MESES_ES[mesIdx] ?? mes} ${year}`;
+}
+
+export function librosLeidosPorMes(books: Book[], mes: string): Book[] {
+  return books
+    .filter((b) => b.leido && b.leido_en === mes)
+    .sort((a, b) => a.titulo.localeCompare(b.titulo));
+}
