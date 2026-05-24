@@ -55,13 +55,13 @@ export function SectionSwitcher({ section }: { section: Section }) {
           icon={
             <Play
               size={13}
-              color={section === 'anime' ? '#0E0B1A' : inactiveColor}
-              fill={section === 'anime' ? '#0E0B1A' : 'transparent'}
+              color={section === 'anime' ? '#EDE8D5' : inactiveColor}
+              fill={section === 'anime' ? '#EDE8D5' : 'transparent'}
               strokeWidth={2}
             />
           }
           activeBg={ANIME.cyan}
-          activeText="#0E0B1A"
+          activeText="#EDE8D5"
           inactiveColor={inactiveColor}
           square={isManga}
         />

@@ -38,6 +38,13 @@ export const useAnimesStore = create<AnimesState>((set, get) => ({
   },
 
   updateAnime: async (id, patch) => {
+    // Si se marca como completado, los episodios vistos suben al máximo
+    if (patch.estado === 'completado') {
+      const anime = get().animes.find((a) => a.id === id);
+      if (anime && anime.eps > 0) {
+        patch = { ...patch, vistos: anime.eps };
+      }
+    }
     const updated = await queries.updateAnime(id, patch);
     if (updated) {
       set((state) => ({

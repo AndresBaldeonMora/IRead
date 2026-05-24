@@ -80,6 +80,7 @@ export default function AnimeTabsLayout() {
             tabBarIcon: ({ color, size }) => <Sparkles size={size} color={color} />,
           }}
         />
+        <Tabs.Screen name="viendo" options={{ href: null }} />
       </Tabs>
 
       <AnimeAddModal visible={adding} onClose={() => setAdding(false)} />

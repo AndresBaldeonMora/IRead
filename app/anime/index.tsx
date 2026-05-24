@@ -19,17 +19,13 @@ export default function AnimeDashboard() {
       pausado: 0,
       pendiente: 0,
     };
-    let totalEps = 0;
-    let watchedEps = 0;
     for (const a of animes) {
       counts[a.estado]++;
-      totalEps += a.eps || 0;
-      watchedEps += a.vistos || 0;
     }
 
     const watching = animes.filter((a) => a.estado === 'viendo').slice(0, 6);
 
-    return { counts, totalEps, watchedEps, watching };
+    return { counts, watching };
   }, [animes]);
 
   return (
@@ -85,13 +81,13 @@ export default function AnimeDashboard() {
         </View>
 
         <View style={styles.tally}>
-          <Text style={styles.tallyLabel}>EPISODIOS VISTOS · TOTAL</Text>
+          <Text style={styles.tallyLabel}>ANIMES COMPLETADOS · TOTAL</Text>
           <Text style={styles.tallyValue}>
-            {data.watchedEps}
-            <Text style={styles.tallyTotal}> / {data.totalEps}</Text>
+            {data.counts.completado}
+            <Text style={styles.tallyTotal}> / {animes.length}</Text>
           </Text>
           <View style={{ marginTop: 12 }}>
-            <ProgressBar value={data.watchedEps} total={data.totalEps} color={ANIME.magenta} thick={6} />
+            <ProgressBar value={data.counts.completado} total={animes.length} color={ANIME.magenta} thick={6} />
           </View>
         </View>
 
@@ -131,7 +127,7 @@ function StatusTile({ status, value }: { status: AnimeEstado; value: number }) {
 }
 
 const styles = StyleSheet.create({
-  headerWrap: { paddingHorizontal: 20, paddingTop: 64 },
+  headerWrap: { paddingHorizontal: 20, paddingTop: 72 },
   bigTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -0.5, color: ANIME.text },
   subtitle: { marginTop: 6, fontSize: 14, color: ANIME.textSoft },
 

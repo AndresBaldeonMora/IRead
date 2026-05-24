@@ -4,17 +4,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Search, X } from 'lucide-react-native';
 import { Anime, AnimeFiltro } from '@/types';
-import { ANIME, MONO } from '@/utils/animeTheme';
+import { ANIME, ANIME_STATUS, MONO } from '@/utils/animeTheme';
 import { useAnimesStore } from '@/store/animes.store';
 import { AnimeCard } from './AnimeCard';
 import { handleSwitcherScroll } from '@/utils/switcherAnim';
 
 const TABS: { id: AnimeFiltro; label: string; glow: string }[] = [
-  { id: 'todos', label: 'Todos', glow: '#FFFFFF' },
-  { id: 'viendo', label: 'Viendo', glow: '#00E5FF' },
-  { id: 'completado', label: 'Completados', glow: '#FF2E92' },
-  { id: 'pausado', label: 'Pausados', glow: '#7C8499' },
-  { id: 'pendiente', label: 'Pendientes', glow: '#8B5CFF' },
+  { id: 'viendo',     label: 'Viendo',     glow: ANIME_STATUS.viendo.glow },
+  { id: 'completado', label: 'Completados', glow: ANIME_STATUS.completado.glow },
+  { id: 'pausado',    label: 'Pausados',    glow: ANIME_STATUS.pausado.glow },
+  { id: 'pendiente',  label: 'Pendientes',  glow: ANIME_STATUS.pendiente.glow },
 ];
 
 export function AnimeListView({
@@ -30,7 +29,7 @@ export function AnimeListView({
   const animes = useAnimesStore((s) => s.animes);
   const advanceEp = useAnimesStore((s) => s.advanceEp);
 
-  const [filter, setFilter] = useState<AnimeFiltro>(fixedFilter ?? 'todos');
+  const [filter, setFilter] = useState<AnimeFiltro>(fixedFilter ?? 'viendo');
   const [query, setQuery] = useState('');
   const activeFilter = fixedFilter ?? filter;
 
@@ -125,7 +124,7 @@ export function AnimeListView({
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: 4, paddingTop: 44 },
+  header: { paddingHorizontal: 4, paddingTop: 72 },
   eyebrow: { fontFamily: MONO, fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: ANIME.magenta, marginBottom: 4 },
   title: { fontSize: 34, fontWeight: '800', letterSpacing: -0.5, color: ANIME.text },
   searchWrap: {

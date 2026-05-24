@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Modal,
   View,
@@ -22,8 +22,10 @@ export function AnimeAddModal({
   onClose: () => void;
 }) {
   const addAnime = useAnimesStore((s) => s.addAnime);
+  const animes = useAnimesStore((s) => s.animes);
 
   const [titulo, setTitulo] = useState('');
+  const [sugerenciasOcultas, setSugerenciasOcultas] = useState(false);
   const [tipo, setTipo] = useState<AnimeTipo>('serie');
   const [temporada, setTemporada] = useState('1');
   const [eps, setEps] = useState('');
@@ -35,8 +37,40 @@ export function AnimeAddModal({
   const canSave = titulo.trim() && (tipo === 'pelicula' || parseInt(eps, 10) > 0);
   const accent = ANIME_STATUS[estado].glow;
 
+  // Sugerencias: títulos únicos que coincidan con lo escrito (mín. 3 chars)
+  const sugerencias = useMemo(() => {
+    if (sugerenciasOcultas) return [];
+    const q = titulo.trim().toLowerCase();
+    if (q.length < 3) return [];
+    const seen = new Set<string>();
+    return animes
+      .filter((a) => {
+        const t = a.titulo.toLowerCase();
+        if (!t.includes(q)) return false;
+        if (seen.has(a.titulo)) return false;
+        seen.add(a.titulo);
+        return true;
+      })
+      .slice(0, 5);
+  }, [titulo, animes, sugerenciasOcultas]);
+
+  const handleSelectSugerencia = (tituloSel: string) => {
+    setTitulo(tituloSel);
+    setSugerenciasOcultas(true);
+    // Calcular siguiente temporada si es serie
+    const temporadasExistentes = animes
+      .filter((a) => a.titulo === tituloSel && a.tipo === 'serie')
+      .map((a) => a.temporada);
+    if (temporadasExistentes.length > 0) {
+      const maxTemp = Math.max(...temporadasExistentes);
+      setTemporada(String(maxTemp + 1));
+      setTipo('serie');
+    }
+  };
+
   const reset = () => {
     setTitulo('');
+    setSugerenciasOcultas(false);
     setTipo('serie');
     setTemporada('1');
     setEps('');
@@ -77,7 +111,47 @@ export function AnimeAddModal({
           <Text style={styles.title}>Nuevo anime</Text>
 
           <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 480 }}>
-            <Field label="Título" value={titulo} onChange={setTitulo} placeholder="p. ej. Frieren" />
+            {/* Campo título con autocompletado */}
+            <View>
+              <Label>Título</Label>
+              <TextInput
+                value={titulo}
+                onChangeText={(v) => { setTitulo(v); setSugerenciasOcultas(false); }}
+                style={styles.input}
+              />
+              {sugerencias.length > 0 && (
+                <View style={styles.suggestBox}>
+                  {sugerencias.map((a, i) => {
+                    const temporadasExistentes = animes
+                      .filter((x) => x.titulo === a.titulo && x.tipo === 'serie')
+                      .map((x) => x.temporada);
+                    const nextTemp = temporadasExistentes.length > 0
+                      ? Math.max(...temporadasExistentes) + 1
+                      : null;
+                    return (
+                      <Pressable
+                        key={a.id}
+                        onPress={() => handleSelectSugerencia(a.titulo)}
+                        style={[
+                          styles.suggestRow,
+                          i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: ANIME.line },
+                        ]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.suggestTitle} numberOfLines={1}>{a.titulo}</Text>
+                          {nextTemp !== null && (
+                            <Text style={styles.suggestHint}>
+                              Serie · siguiente temporada: {nextTemp}
+                            </Text>
+                          )}
+                        </View>
+                        <Text style={styles.suggestArrow}>→</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
 
             <Label>Tipo</Label>
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -111,15 +185,15 @@ export function AnimeAddModal({
 
             <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
               {tipo === 'serie' && (
-                <Field label="Temporada" value={temporada} onChange={setTemporada} placeholder="1" keyboard="numeric" flex />
+                <Field label="Temporada" value={temporada} onChange={setTemporada} keyboard="numeric" flex />
               )}
               {tipo !== 'pelicula' && (
-                <Field label="Eps. totales" value={eps} onChange={setEps} placeholder="12" keyboard="numeric" flex />
+                <Field label="Eps. totales" value={eps} onChange={setEps} keyboard="numeric" flex />
               )}
               {tipo !== 'pelicula' && (
-                <Field label="Eps. vistos" value={vistos} onChange={setVistos} placeholder="0" keyboard="numeric" flex />
+                <Field label="Eps. vistos" value={vistos} onChange={setVistos} keyboard="numeric" flex />
               )}
-              <Field label="Año" value={anio} onChange={setAnio} placeholder="2024" keyboard="numeric" flex />
+              <Field label="Año" value={anio} onChange={setAnio} keyboard="numeric" flex />
             </View>
 
             <Label>Estado de la serie</Label>
@@ -209,14 +283,12 @@ function Field({
   label,
   value,
   onChange,
-  placeholder,
   keyboard,
   flex,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  placeholder?: string;
   keyboard?: 'numeric';
   flex?: boolean;
 }) {
@@ -226,8 +298,6 @@ function Field({
       <TextInput
         value={value}
         onChangeText={onChange}
-        placeholder={placeholder}
-        placeholderTextColor={ANIME.textSoft}
         keyboardType={keyboard === 'numeric' ? 'number-pad' : 'default'}
         style={styles.input}
       />
@@ -287,4 +357,36 @@ const styles = StyleSheet.create({
   gridItem: { width: '47.5%' },
   btn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   cancel: { borderWidth: StyleSheet.hairlineWidth, borderColor: ANIME.line },
+  suggestBox: {
+    marginTop: 4,
+    backgroundColor: ANIME.surface,
+    borderWidth: 1,
+    borderColor: ANIME.cyan + '55',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  suggestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  suggestTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: ANIME.text,
+  },
+  suggestHint: {
+    fontFamily: MONO,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    color: ANIME.cyan,
+    marginTop: 2,
+  },
+  suggestArrow: {
+    fontSize: 14,
+    color: ANIME.cyan,
+    fontWeight: '700',
+  },
 });

@@ -111,7 +111,7 @@ function StarRow({
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: 4, paddingTop: 44, paddingBottom: 14 },
+  header: { paddingHorizontal: 4, paddingTop: 72, paddingBottom: 14 },
   eyebrow: {
     fontFamily: MONO,
     fontSize: 10,
