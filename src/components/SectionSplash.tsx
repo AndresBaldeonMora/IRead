@@ -1,19 +1,41 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Image, ImageSourcePropType, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSplashStore, SplashSection } from '@/store/splash.store';
 import { ANIME } from '@/utils/animeTheme';
 import { MANGA } from '@/utils/mangaTheme';
 
-const IMAGES: Record<SplashSection, ReturnType<typeof require>> = {
+const IMAGES: Record<SplashSection, ImageSourcePropType> = {
   books: require('../../assets/Bungou.png'),
   anime: require('../../assets/Naruto.png'),
   manga: require('../../assets/Saiki.png'),
 };
 
+const LABELS: Record<SplashSection, string> = {
+  books: 'Cargando libros',
+  anime: 'Cargando animes',
+  manga: 'Cargando mangas',
+};
+
+const FRASES = [
+  'Te amo',
+  'Hecho con amor para ti',
+  'Para mi lectora favorita',
+  'Eres mi historia favorita',
+  'Cada página es para ti',
+  'Disfruta tu lectura, mi amor',
+  'Te amo más que a todos los libros',
+  'Mi persona favorita del mundo',
+];
+
+function textColor(section: SplashSection): string {
+  if (section === 'books') return '#7A3B4A';
+  return '#FFFFFF';
+}
+
 const NAV_AT = 750;
-const OUT_AT = 1350;
-const HIDE_AT = 1800;
+const OUT_AT = 2550;
+const HIDE_AT = 3000;
 
 export function SectionSplash() {
   const visible = useSplashStore((s) => s.visible);
@@ -31,9 +53,22 @@ export function SectionSplash() {
   const t2 = useRef<ReturnType<typeof setTimeout> | null>(null);
   const t3 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [dots, setDots] = useState('');
+  const [frase, setFrase] = useState(FRASES[0]);
+
+  useEffect(() => {
+    if (!visible) {
+      setDots('');
+      return;
+    }
+    const id = setInterval(() => setDots((d) => (d.length >= 3 ? '' : d + '.')), 350);
+    return () => clearInterval(id);
+  }, [visible]);
+
   useEffect(() => {
     if (!visible) return;
 
+    setFrase(FRASES[Math.floor(Math.random() * FRASES.length)]);
     bgOpacity.setValue(0);
     imgScale.setValue(0.5);
     imgOpacity.setValue(0);
@@ -80,11 +115,20 @@ export function SectionSplash() {
       pointerEvents="none"
     >
       <Background section={section} />
-      <Animated.View
-        style={{ opacity: imgOpacity, transform: [{ scale: imgScale }, { translateY: floatY }] }}
-      >
-        <Image source={IMAGES[section]} style={styles.image} resizeMode="contain" />
-      </Animated.View>
+      <View style={styles.center}>
+        <Animated.View
+          style={{ opacity: imgOpacity, transform: [{ scale: imgScale }, { translateY: floatY }] }}
+        >
+          <Image source={IMAGES[section]} style={styles.image} resizeMode="contain" />
+        </Animated.View>
+        <Animated.Text style={[styles.loading, { color: textColor(section), opacity: imgOpacity }]}>
+          {LABELS[section]}
+          {dots}
+        </Animated.Text>
+      </View>
+      <Animated.Text style={[styles.frase, { color: textColor(section), opacity: imgOpacity }]}>
+        {frase}
+      </Animated.Text>
     </Animated.View>
   );
 }
@@ -106,8 +150,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   image: {
     width: 180,
     height: 180,
+  },
+  loading: {
+    marginTop: 20,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    minWidth: 200,
+    textAlign: 'center',
+  },
+  frase: {
+    position: 'absolute',
+    bottom: 56,
+    left: 28,
+    right: 28,
+    textAlign: 'center',
+    fontSize: 14,
+    fontStyle: 'italic',
   },
 });
