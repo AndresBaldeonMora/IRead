@@ -126,7 +126,6 @@ export default function AnimeDetail() {
 
         {/* status selector */}
         <View style={{ paddingHorizontal: 22, marginTop: 22 }}>
-          <Text style={styles.metaEyebrow}>// CAMBIAR ESTADO</Text>
           <View style={styles.statusGrid}>
             {(Object.keys(ANIME_STATUS) as AnimeEstado[]).map((k) => {
               const s = ANIME_STATUS[k];
@@ -169,7 +168,6 @@ export default function AnimeDetail() {
 
         {/* notes */}
         <View style={{ paddingHorizontal: 22, marginTop: 22 }}>
-          <Text style={styles.metaEyebrow}>// OBSERVACIONES</Text>
           <TextInput
             value={notas}
             onChangeText={setNotas}

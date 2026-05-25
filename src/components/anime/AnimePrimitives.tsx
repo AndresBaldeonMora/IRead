@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Anime, AnimeEstado } from '@/types';
 import { ANIME, ANIME_STATUS, MONO } from '@/utils/animeTheme';
@@ -10,12 +10,13 @@ export function AnimeCover({
   h = 88,
   glyph = true,
 }: {
-  anime: Pick<Anime, 'color' | 'vistos'>;
+  anime: Pick<Anime, 'color' | 'vistos' | 'imagen_url'>;
   w?: number;
   h?: number;
   glyph?: boolean;
 }) {
   const color = anime.color || ANIME.cyan;
+  const hasImage = !!anime.imagen_url;
   return (
     <View
       style={{
@@ -37,6 +38,13 @@ export function AnimeCover({
         end={{ x: 0.85, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
+      {hasImage && (
+        <Image
+          source={{ uri: anime.imagen_url! }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+      )}
       {/* corner notch */}
       <View
         style={{

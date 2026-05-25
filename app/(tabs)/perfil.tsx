@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Pressable, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { BookOpen } from 'lucide-react-native';
+import { BookOpen, Download, Upload } from 'lucide-react-native';
 import { useBooksStore } from '@/store/books.store';
+import { useAnimesStore } from '@/store/animes.store';
+import { useMangasStore } from '@/store/mangas.store';
 import { useColors, useSerifFamily } from '@/store/theme.store';
 import { lecturasPorMes, librosLeidosPorMes, formatMesLargo } from '@/services/statsService';
+import { exportarDatos, importarDatos } from '@/services/backup';
 import { MonthlyReadingChart } from '@/components/MonthlyReadingChart';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { handleSwitcherScroll } from '@/utils/switcherAnim';
@@ -15,6 +18,54 @@ export default function PerfilScreen() {
   const serif = useSerifFamily();
   const router = useRouter();
   const books = useBooksStore((s) => s.books);
+  const loadBooks = useBooksStore((s) => s.loadBooks);
+  const loadAnimes = useAnimesStore((s) => s.loadAnimes);
+  const loadMangas = useMangasStore((s) => s.loadMangas);
+
+  const [respaldando, setRespaldando] = useState(false);
+
+  const handleExportar = async () => {
+    if (respaldando) return;
+    setRespaldando(true);
+    try {
+      const r = await exportarDatos();
+      if (!r.ok) Alert.alert('Exportar', r.mensaje);
+    } catch {
+      Alert.alert('Exportar', 'Ocurrió un error al exportar');
+    } finally {
+      setRespaldando(false);
+    }
+  };
+
+  const handleImportar = () => {
+    Alert.alert(
+      'Importar respaldo',
+      'Esto reemplazará TODOS tus datos actuales (libros, animes y mangas) por los del archivo. ¿Continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Importar',
+          style: 'destructive',
+          onPress: async () => {
+            setRespaldando(true);
+            try {
+              const r = await importarDatos();
+              if (r.ok) {
+                await Promise.all([loadBooks(), loadAnimes(), loadMangas()]);
+                Alert.alert('Importar', `Listo. ${r.mensaje}.`);
+              } else {
+                Alert.alert('Importar', r.mensaje);
+              }
+            } catch {
+              Alert.alert('Importar', 'Ocurrió un error al importar');
+            } finally {
+              setRespaldando(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const meses = useMemo(() => lecturasPorMes(books), [books]);
   const totalLeidos = useMemo(() => books.filter((b) => b.leido).length, [books]);
@@ -99,6 +150,38 @@ export default function PerfilScreen() {
           </View>
         )}
 
+        <View style={styles.section}>
+          <Text style={[styles.kicker, { color: c.gold }]}>· respaldo ·</Text>
+          <View style={styles.backupRow}>
+            <Pressable
+              onPress={handleExportar}
+              disabled={respaldando}
+              style={[styles.backupBtn, { backgroundColor: c.wine, opacity: respaldando ? 0.6 : 1 }]}
+            >
+              {respaldando ? (
+                <ActivityIndicator size="small" color={c.paper} />
+              ) : (
+                <Download size={18} color={c.paper} />
+              )}
+              <Text style={[styles.backupBtnText, { color: c.paper }]}>Exportar</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleImportar}
+              disabled={respaldando}
+              style={[
+                styles.backupBtn,
+                { backgroundColor: c.paperCard, borderWidth: 1.5, borderColor: c.wine, opacity: respaldando ? 0.6 : 1 },
+              ]}
+            >
+              <Upload size={18} color={c.wine} />
+              <Text style={[styles.backupBtnText, { color: c.wine }]}>Importar</Text>
+            </Pressable>
+          </View>
+          <Text style={[styles.hint, { color: c.inkSoft }]}>
+            Exporta un archivo con toda tu información para guardarlo. Impórtalo si reinstalas la app.
+          </Text>
+        </View>
+
         <View style={[styles.quote, { backgroundColor: c.paperCard, borderColor: c.rule }]}>
           <Text style={[styles.quoteText, { color: c.wineDeep, fontFamily: serif }]}>
             "Un cuarto sin libros es como un cuerpo sin alma."
@@ -136,6 +219,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   hint: { fontSize: 11, textAlign: 'center', marginTop: 10, fontStyle: 'italic' },
+  backupRow: { flexDirection: 'row', gap: 10 },
+  backupBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  backupBtnText: { fontSize: 15, fontWeight: '700' },
   card: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: 4 },
   bookRow: {
     flexDirection: 'row',

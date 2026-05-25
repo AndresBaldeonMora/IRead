@@ -3,6 +3,7 @@ import { DATABASE_NAME } from '@/utils/constants';
 import { SEED_BOOKS } from './seed';
 import { SEED_ANIMES } from './animeSeed';
 import { SEED_MANGAS } from './mangaSeed';
+import { SEED_MI_BIBLIOTECA } from './miBibliotecaSeed';
 import { generateId } from '@/utils/formatters';
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
@@ -94,6 +95,8 @@ export async function initializeDatabase(): Promise<void> {
   await runMigrationV4();
   await runMigrationV5();
   await runMigrationV6();
+  await runMigrationV7();
+  await runMigrationV8();
   await clearTestDataOnce();
   await seedIfEmpty();
   await seedAnimesIfEmpty();
@@ -224,6 +227,57 @@ async function runMigrationV6(): Promise<void> {
   );
 }
 
+async function runMigrationV7(): Promise<void> {
+  const db = await getDatabase();
+  const done = await db.getFirstAsync<{ valor: string }>(
+    "SELECT valor FROM settings WHERE clave = 'schema_v7'"
+  );
+  if (done) return;
+
+  // Popula mi_biblioteca con los 127 libros físicos del usuario.
+  // Usa el rango 10001–10127 para no colisionar jamás con novelas_eternas (1–9999).
+  const now = new Date().toISOString();
+  for (const book of SEED_MI_BIBLIOTECA) {
+    await db.runAsync(
+      `INSERT OR IGNORE INTO books
+         (id, numero, titulo, autor, tengo, leido, coleccion, generos,
+          editorial, edicion, idioma, agregado_en, actualizado_en)
+       VALUES (?, ?, ?, ?, 1, 0, 'mi_biblioteca', '', ?, ?, ?, ?, ?)`,
+      [
+        generateId(),
+        book.numero,
+        book.titulo,
+        book.autor,
+        book.editorial || null,
+        book.edicion  || null,
+        book.idioma   || null,
+        now,
+        now,
+      ]
+    );
+  }
+
+  await db.runAsync(
+    "INSERT OR REPLACE INTO settings (clave, valor, actualizado_en) VALUES ('schema_v7', '1', ?)",
+    [new Date().toISOString()]
+  );
+}
+
+async function runMigrationV8(): Promise<void> {
+  const db = await getDatabase();
+  const done = await db.getFirstAsync<{ valor: string }>(
+    "SELECT valor FROM settings WHERE clave = 'schema_v8'"
+  );
+  if (done) return;
+
+  try { await db.runAsync('ALTER TABLE animes ADD COLUMN imagen_url TEXT'); } catch { /* columna ya existe */ }
+
+  await db.runAsync(
+    "INSERT OR REPLACE INTO settings (clave, valor, actualizado_en) VALUES ('schema_v8', '1', ?)",
+    [new Date().toISOString()]
+  );
+}
+
 async function clearTestDataOnce(): Promise<void> {
   const db = await getDatabase();
   const flag = await db.getFirstAsync<{ valor: string }>(
@@ -281,8 +335,8 @@ async function seedAnimesIfEmpty(): Promise<void> {
   const now = new Date().toISOString();
   for (const a of SEED_ANIMES) {
     await db.runAsync(
-      `INSERT INTO animes (id, titulo, estudio, tipo, temporada, eps, vistos, serie, estado, anio, color, notas, agregado_en, actualizado_en)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO animes (id, titulo, estudio, tipo, temporada, eps, vistos, serie, estado, anio, color, notas, imagen_url, agregado_en, actualizado_en)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         generateId(),
         a.titulo,
@@ -296,6 +350,7 @@ async function seedAnimesIfEmpty(): Promise<void> {
         a.anio,
         a.color,
         a.notas ?? null,
+        a.imagen_url ?? null,
         now,
         now,
       ]

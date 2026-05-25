@@ -137,7 +137,6 @@ export default function MangaDetail() {
 
           {/* status selector */}
           <View style={{ paddingHorizontal: 22, marginTop: 20 }}>
-            <Text style={styles.metaEyebrow}>// CAMBIAR ESTADO</Text>
             <View style={styles.statusGrid}>
               {(Object.keys(MANGA_STATUS) as MangaEstado[]).map((k) => {
                 const s = MANGA_STATUS[k];
@@ -186,7 +185,6 @@ export default function MangaDetail() {
 
           {/* notes */}
           <View style={{ paddingHorizontal: 22, marginTop: 20 }}>
-            <Text style={styles.metaEyebrow}>// OBSERVACIONES</Text>
             <TextInput
               value={notas}
               onChangeText={setNotas}

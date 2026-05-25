@@ -21,6 +21,7 @@ interface BooksState {
   addBook: (input: Omit<BookInput, 'numero'>) => Promise<Book>;
   updateBook: (id: string, patch: Partial<BookInput>) => Promise<void>;
   deleteBook: (id: string) => Promise<void>;
+  moveToLibrary: (id: string) => Promise<void>;
 }
 
 export const useBooksStore = create<BooksState>((set, get) => ({
@@ -103,6 +104,25 @@ export const useBooksStore = create<BooksState>((set, get) => ({
   deleteBook: async (id) => {
     await queries.deleteBook(id);
     set((state) => ({ books: state.books.filter((b) => b.id !== id) }));
+  },
+
+  moveToLibrary: async (id) => {
+    // Optimista: mueve el libro de deseos → mi_biblioteca con tengo=true
+    set((state) => ({
+      books: state.books.map((b) =>
+        b.id === id ? { ...b, coleccion: 'mi_biblioteca', tengo: true } : b
+      ),
+    }));
+    try {
+      await queries.updateBook(id, { coleccion: 'mi_biblioteca', tengo: true } as any);
+    } catch (e) {
+      console.error('moveToLibrary failed', e);
+      set((state) => ({
+        books: state.books.map((b) =>
+          b.id === id ? { ...b, coleccion: 'deseos', tengo: false } : b
+        ),
+      }));
+    }
   },
 }));
 

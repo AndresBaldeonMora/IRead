@@ -137,7 +137,6 @@ export default function MangaDashboard() {
           {/* READING TALLY dark card */}
           <View style={styles.tally}>
             <Screentone color={MANGA.paper} opacity={0.08} />
-            <Text style={styles.tallyEyebrow}>// EN PROGRESO ACTIVO</Text>
             <View style={styles.tallyRow}>
               <Text style={styles.tallyValue}>{data.totalReading}</Text>
               <Text style={styles.tallyUnit}>tomos/caps leídos</Text>

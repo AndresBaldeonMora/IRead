@@ -115,14 +115,16 @@ export function AddBookModal({ visible, onClose, bookToEdit }: Props) {
           idioma: idioma.trim() || null,
         } as any);
       } else {
+        // Si ya lo tiene → va a Mi Biblioteca; si no → va a Deseos
+        const coleccion = (formato !== 'digital' && tengo) ? 'mi_biblioteca' : 'deseos';
         await addBook({
           titulo: titulo.trim(),
           autor: autor.trim(),
           fecha_salida: null,
-          tengo,
+          tengo: formato !== 'digital' ? tengo : false,
           leido,
           leido_en: leido ? leidoEn : null,
-          coleccion: 'mi_biblioteca',
+          coleccion,
           formato,
           generos: selectedGeneros,
           notas: null,

@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { Anime, AnimeInput, AnimeFiltro } from '@/types';
 import * as queries from '@/db/animeQueries';
+import { searchAnime, cacheCoverImage } from '@/services/jikan';
 
 interface AnimesState {
   animes: Anime[];
   loaded: boolean;
   filtro: AnimeFiltro;
   busqueda: string;
+  descargandoPortadas: boolean;
   setFiltro: (filtro: AnimeFiltro) => void;
   setBusqueda: (q: string) => void;
   loadAnimes: () => Promise<void>;
@@ -15,6 +17,8 @@ interface AnimesState {
   deleteAnime: (id: string) => Promise<void>;
   advanceEp: (id: string, delta?: number) => Promise<void>;
   setRating: (id: string, rating: number | null) => Promise<void>;
+  fetchImageForAnime: (id: string) => Promise<boolean>;
+  fetchMissingImages: () => Promise<{ done: number; total: number }>;
 }
 
 export const useAnimesStore = create<AnimesState>((set, get) => ({
@@ -22,6 +26,7 @@ export const useAnimesStore = create<AnimesState>((set, get) => ({
   loaded: false,
   filtro: 'todos',
   busqueda: '',
+  descargandoPortadas: false,
 
   setFiltro: (filtro) => set({ filtro }),
   setBusqueda: (busqueda) => set({ busqueda }),
@@ -91,6 +96,42 @@ export const useAnimesStore = create<AnimesState>((set, get) => ({
       console.error('setRating failed', e);
       await get().loadAnimes();
     }
+  },
+
+  // Busca la portada en Jikan por título, la guarda localmente y actualiza el anime.
+  // Devuelve true si encontró y guardó una imagen.
+  fetchImageForAnime: async (id) => {
+    const anime = get().animes.find((a) => a.id === id);
+    if (!anime) return false;
+    try {
+      const results = await searchAnime(anime.titulo);
+      const match = results.find((r) => r.imageUrl);
+      if (!match?.imageUrl) return false;
+      const localUri = await cacheCoverImage(match.imageUrl, id);
+      if (!localUri) return false;
+      await get().updateAnime(id, { imagen_url: localUri });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  // Recorre los animes sin portada y descarga las que pueda (best-effort, offline-safe).
+  fetchMissingImages: async () => {
+    const pendientes = get().animes.filter((a) => !a.imagen_url);
+    set({ descargandoPortadas: true });
+    let done = 0;
+    try {
+      for (const a of pendientes) {
+        const ok = await get().fetchImageForAnime(a.id);
+        if (ok) done++;
+        // Respeta el límite de Jikan (~3 req/s)
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    } finally {
+      set({ descargandoPortadas: false });
+    }
+    return { done, total: pendientes.length };
   },
 }));
 

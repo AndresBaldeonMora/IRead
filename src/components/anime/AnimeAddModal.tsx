@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Modal,
   View,
   Text,
+  Image,
   Pressable,
   TextInput,
+  ActivityIndicator,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
@@ -13,6 +15,7 @@ import {
 import { AnimeEstado, AnimeSerie, AnimeTipo } from '@/types';
 import { ANIME, ANIME_STATUS, MONO } from '@/utils/animeTheme';
 import { useAnimesStore } from '@/store/animes.store';
+import { searchAnime, cacheCoverImage, JikanResult } from '@/services/jikan';
 
 export function AnimeAddModal({
   visible,
@@ -22,6 +25,7 @@ export function AnimeAddModal({
   onClose: () => void;
 }) {
   const addAnime = useAnimesStore((s) => s.addAnime);
+  const updateAnime = useAnimesStore((s) => s.updateAnime);
   const animes = useAnimesStore((s) => s.animes);
 
   const [titulo, setTitulo] = useState('');
@@ -33,6 +37,48 @@ export function AnimeAddModal({
   const [anio, setAnio] = useState(String(new Date().getFullYear()));
   const [serie, setSerie] = useState<AnimeSerie>('emision');
   const [estado, setEstado] = useState<AnimeEstado>('viendo');
+  const [guardando, setGuardando] = useState(false);
+
+  // Búsqueda online en Jikan (MyAnimeList)
+  const [onlineResults, setOnlineResults] = useState<JikanResult[]>([]);
+  const [buscandoOnline, setBuscandoOnline] = useState(false);
+  const [imagenUrl, setImagenUrl] = useState<string | null>(null);
+
+  // Debounce: busca en Jikan cuando el usuario escribe (mín. 3 chars)
+  useEffect(() => {
+    const q = titulo.trim();
+    if (sugerenciasOcultas || q.length < 3) {
+      setOnlineResults([]);
+      setBuscandoOnline(false);
+      return;
+    }
+    const controller = new AbortController();
+    setBuscandoOnline(true);
+    const t = setTimeout(async () => {
+      try {
+        const results = await searchAnime(q, controller.signal);
+        setOnlineResults(results);
+      } catch {
+        setOnlineResults([]);
+      } finally {
+        setBuscandoOnline(false);
+      }
+    }, 500);
+    return () => {
+      controller.abort();
+      clearTimeout(t);
+    };
+  }, [titulo, sugerenciasOcultas]);
+
+  const handleSelectOnline = (r: JikanResult) => {
+    setTitulo(r.titulo);
+    setTipo(r.tipo);
+    if (r.eps > 0) setEps(String(r.eps));
+    if (r.anio > 0) setAnio(String(r.anio));
+    setImagenUrl(r.imageUrl);
+    setSugerenciasOcultas(true);
+    setOnlineResults([]);
+  };
 
   const canSave = titulo.trim() && (tipo === 'pelicula' || parseInt(eps, 10) > 0);
   const accent = ANIME_STATUS[estado].glow;
@@ -78,25 +124,41 @@ export function AnimeAddModal({
     setAnio(String(new Date().getFullYear()));
     setSerie('emision');
     setEstado('viendo');
+    setOnlineResults([]);
+    setImagenUrl(null);
   };
 
   const handleSave = async () => {
-    if (!canSave) return;
-    const totalEps = tipo === 'pelicula' ? 1 : parseInt(eps, 10);
-    await addAnime({
-      titulo: titulo.trim(),
-      tipo,
-      temporada: parseInt(temporada, 10) || 1,
-      eps: totalEps,
-      vistos: Math.max(0, Math.min(parseInt(vistos || '0', 10), totalEps)),
-      anio: parseInt(anio, 10) || new Date().getFullYear(),
-      serie,
-      estado,
-      color: accent,
-      notas: null,
-    });
-    reset();
-    onClose();
+    if (!canSave || guardando) return;
+    setGuardando(true);
+    try {
+      const totalEps = tipo === 'pelicula' ? 1 : parseInt(eps, 10);
+      const anime = await addAnime({
+        titulo: titulo.trim(),
+        tipo,
+        temporada: parseInt(temporada, 10) || 1,
+        eps: totalEps,
+        vistos: Math.max(0, Math.min(parseInt(vistos || '0', 10), totalEps)),
+        anio: parseInt(anio, 10) || new Date().getFullYear(),
+        serie,
+        estado,
+        color: accent,
+        notas: null,
+        rating: null,
+        imagen_url: null,
+      });
+
+      // Descarga y guarda la portada localmente (best-effort, funciona offline una vez cacheada)
+      if (imagenUrl) {
+        const localUri = await cacheCoverImage(imagenUrl, anime.id);
+        if (localUri) await updateAnime(anime.id, { imagen_url: localUri });
+      }
+
+      reset();
+      onClose();
+    } finally {
+      setGuardando(false);
+    }
   };
 
   return (
@@ -114,11 +176,60 @@ export function AnimeAddModal({
             {/* Campo título con autocompletado */}
             <View>
               <Label>Título</Label>
-              <TextInput
-                value={titulo}
-                onChangeText={(v) => { setTitulo(v); setSugerenciasOcultas(false); }}
-                style={styles.input}
-              />
+              <View style={{ position: 'relative', justifyContent: 'center' }}>
+                <TextInput
+                  value={titulo}
+                  onChangeText={(v) => { setTitulo(v); setSugerenciasOcultas(false); setImagenUrl(null); }}
+                  placeholder="Escribe para buscar en MyAnimeList…"
+                  placeholderTextColor={ANIME.textSoft}
+                  style={styles.input}
+                />
+                {buscandoOnline && (
+                  <ActivityIndicator
+                    size="small"
+                    color={ANIME.cyan}
+                    style={{ position: 'absolute', right: 12 }}
+                  />
+                )}
+              </View>
+
+              {/* Resultados de la API (con portada) */}
+              {onlineResults.length > 0 && (
+                <View style={styles.onlineBox}>
+                  {onlineResults.map((r, i) => (
+                    <Pressable
+                      key={r.malId}
+                      onPress={() => handleSelectOnline(r)}
+                      style={[
+                        styles.onlineRow,
+                        i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: ANIME.line },
+                      ]}
+                    >
+                      {r.imageUrl ? (
+                        <Image source={{ uri: r.imageUrl }} style={styles.onlineThumb} resizeMode="cover" />
+                      ) : (
+                        <View style={[styles.onlineThumb, { backgroundColor: ANIME.surface }]} />
+                      )}
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.onlineTitle} numberOfLines={2}>{r.titulo}</Text>
+                        <Text style={styles.onlineMeta}>
+                          {r.tipo === 'pelicula' ? 'Película' : r.tipo === 'ova' ? 'OVA' : 'Serie'}
+                          {r.anio > 0 ? ` · ${r.anio}` : ''}
+                          {r.eps > 0 ? ` · ${r.eps} ep` : ''}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+
+              {imagenUrl && (
+                <View style={styles.coverPreviewRow}>
+                  <Image source={{ uri: imagenUrl }} style={styles.coverPreview} resizeMode="cover" />
+                  <Text style={styles.coverPreviewText}>Portada seleccionada</Text>
+                </View>
+              )}
+
               {sugerencias.length > 0 && (
                 <View style={styles.suggestBox}>
                   {sugerencias.map((a, i) => {
@@ -258,15 +369,19 @@ export function AnimeAddModal({
             </Pressable>
             <Pressable
               onPress={handleSave}
-              disabled={!canSave}
+              disabled={!canSave || guardando}
               style={[
                 styles.btn,
-                { flex: 2, backgroundColor: canSave ? accent : 'rgba(255,255,255,0.05)' },
+                { flex: 2, backgroundColor: canSave && !guardando ? accent : 'rgba(255,255,255,0.05)' },
               ]}
             >
-              <Text style={{ color: canSave ? '#0E0B1A' : ANIME.textSoft, fontWeight: '800', fontSize: 13 }}>
-                Guardar
-              </Text>
+              {guardando ? (
+                <ActivityIndicator size="small" color="#0E0B1A" />
+              ) : (
+                <Text style={{ color: canSave ? '#0E0B1A' : ANIME.textSoft, fontWeight: '800', fontSize: 13 }}>
+                  Guardar
+                </Text>
+              )}
             </Pressable>
           </View>
         </View>
@@ -388,5 +503,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: ANIME.cyan,
     fontWeight: '700',
+  },
+  onlineBox: {
+    marginTop: 6,
+    backgroundColor: ANIME.surface,
+    borderWidth: 1,
+    borderColor: ANIME.cyan + '55',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  onlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 12,
+  },
+  onlineThumb: {
+    width: 40,
+    height: 56,
+    borderRadius: 6,
+    backgroundColor: ANIME.bg2,
+  },
+  onlineTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: ANIME.text,
+    lineHeight: 18,
+  },
+  onlineMeta: {
+    fontFamily: MONO,
+    fontSize: 10,
+    letterSpacing: 0.6,
+    color: ANIME.textSoft,
+    marginTop: 3,
+    textTransform: 'uppercase',
+  },
+  coverPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+  },
+  coverPreview: {
+    width: 34,
+    height: 48,
+    borderRadius: 6,
+  },
+  coverPreviewText: {
+    fontFamily: MONO,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    color: ANIME.cyan,
+    textTransform: 'uppercase',
   },
 });

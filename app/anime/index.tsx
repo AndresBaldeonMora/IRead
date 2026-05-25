@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { ImageDown } from 'lucide-react-native';
 import { AnimeEstado } from '@/types';
 import { ANIME, ANIME_STATUS, MONO } from '@/utils/animeTheme';
 import { useAnimesStore } from '@/store/animes.store';
@@ -11,8 +12,13 @@ import { handleSwitcherScroll } from '@/utils/switcherAnim';
 export default function AnimeDashboard() {
   const router = useRouter();
   const animes = useAnimesStore((s) => s.animes);
+  const fetchMissingImages = useAnimesStore((s) => s.fetchMissingImages);
+  const descargandoPortadas = useAnimesStore((s) => s.descargandoPortadas);
+
+  const sinPortada = useMemo(() => animes.filter((a) => !a.imagen_url).length, [animes]);
 
   const data = useMemo(() => {
+    // Conteo por entrada individual (para los tiles de estado)
     const counts: Record<AnimeEstado, number> = {
       viendo: 0,
       completado: 0,
@@ -23,9 +29,23 @@ export default function AnimeDashboard() {
       counts[a.estado]++;
     }
 
+    // Estadísticas por SERIE ÚNICA (agrupando por título)
+    // Una serie se considera completada solo si TODAS sus entradas están completadas
+    const porTitulo = new Map<string, AnimeEstado[]>();
+    for (const a of animes) {
+      const estados = porTitulo.get(a.titulo) ?? [];
+      estados.push(a.estado);
+      porTitulo.set(a.titulo, estados);
+    }
+    const totalSeries = porTitulo.size;
+    let seriesCompletadas = 0;
+    for (const estados of porTitulo.values()) {
+      if (estados.every((e) => e === 'completado')) seriesCompletadas++;
+    }
+
     const watching = animes.filter((a) => a.estado === 'viendo').slice(0, 6);
 
-    return { counts, watching };
+    return { counts, watching, totalSeries, seriesCompletadas };
   }, [animes]);
 
   return (
@@ -36,6 +56,25 @@ export default function AnimeDashboard() {
           <Text style={styles.subtitle}>
             {data.counts.viendo} viendo · {data.counts.completado} completados
           </Text>
+
+          {sinPortada > 0 && (
+            <Pressable
+              onPress={() => fetchMissingImages()}
+              disabled={descargandoPortadas}
+              style={styles.coverBtn}
+            >
+              {descargandoPortadas ? (
+                <ActivityIndicator size="small" color={ANIME.cyan} />
+              ) : (
+                <ImageDown size={16} color={ANIME.cyan} />
+              )}
+              <Text style={styles.coverBtnText}>
+                {descargandoPortadas
+                  ? 'Descargando portadas…'
+                  : `Descargar ${sinPortada} portada${sinPortada === 1 ? '' : 's'}`}
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         {data.watching.length > 0 && (
@@ -81,13 +120,13 @@ export default function AnimeDashboard() {
         </View>
 
         <View style={styles.tally}>
-          <Text style={styles.tallyLabel}>ANIMES COMPLETADOS · TOTAL</Text>
+          <Text style={styles.tallyLabel}>SERIES COMPLETADAS · TOTAL</Text>
           <Text style={styles.tallyValue}>
-            {data.counts.completado}
-            <Text style={styles.tallyTotal}> / {animes.length}</Text>
+            {data.seriesCompletadas}
+            <Text style={styles.tallyTotal}> / {data.totalSeries}</Text>
           </Text>
           <View style={{ marginTop: 12 }}>
-            <ProgressBar value={data.counts.completado} total={animes.length} color={ANIME.magenta} thick={6} />
+            <ProgressBar value={data.seriesCompletadas} total={data.totalSeries} color={ANIME.magenta} thick={6} />
           </View>
         </View>
 
@@ -107,7 +146,6 @@ function SectionTitle({
 }) {
   return (
     <View style={{ marginBottom: 12, paddingHorizontal: 20 }}>
-      <Text style={[styles.sectionEyebrow, { color: accent }]}>// {eyebrow}</Text>
       <Text style={styles.sectionTitle}>{children}</Text>
     </View>
   );
@@ -130,6 +168,20 @@ const styles = StyleSheet.create({
   headerWrap: { paddingHorizontal: 20, paddingTop: 72 },
   bigTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -0.5, color: ANIME.text },
   subtitle: { marginTop: 6, fontSize: 14, color: ANIME.textSoft },
+  coverBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 8,
+    marginTop: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ANIME.cyan + '55',
+    backgroundColor: ANIME.cyan + '14',
+  },
+  coverBtnText: { fontSize: 12.5, fontWeight: '700', color: ANIME.cyan },
 
   heroCard: {
     width: 180,

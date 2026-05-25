@@ -25,9 +25,11 @@ interface Props {
   book: Book;
   onPress?: (book: Book) => void;
   onToggle?: (book: Book) => void;
+  /** Oculta el botón circular de "ya lo tengo" en la tarjeta (se puede editar desde dentro) */
+  hideToggle?: boolean;
 }
 
-export const BookCard = React.memo(function BookCard({ book, onPress, onToggle }: Props) {
+export const BookCard = React.memo(function BookCard({ book, onPress, onToggle, hideToggle }: Props) {
   const c = useColors();
   const serif = useSerifFamily();
   const [colorA, colorB] = spineColors(book.numero);
@@ -94,7 +96,7 @@ export const BookCard = React.memo(function BookCard({ book, onPress, onToggle }
         </View>
       </View>
 
-      {book.formato !== 'digital' && (
+      {book.formato !== 'digital' && !hideToggle && (
         <Pressable
           onPress={() => onToggle?.(book)}
           hitSlop={10}

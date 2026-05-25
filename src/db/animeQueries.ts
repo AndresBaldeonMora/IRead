@@ -16,6 +16,7 @@ interface AnimeRow {
   color: string;
   notas: string | null;
   rating: number | null;
+  imagen_url: string | null;
   agregado_en: string;
   actualizado_en: string;
 }
@@ -34,6 +35,7 @@ function rowToAnime(row: AnimeRow): Anime {
     color: row.color,
     notas: row.notas,
     rating: row.rating ?? null,
+    imagen_url: row.imagen_url ?? null,
     agregado_en: row.agregado_en,
     actualizado_en: row.actualizado_en,
   };
@@ -62,8 +64,8 @@ export async function insertAnime(input: AnimeInput): Promise<Anime> {
   const id = input.id ?? generateId();
 
   await db.runAsync(
-    `INSERT INTO animes (id, titulo, estudio, tipo, temporada, eps, vistos, serie, estado, anio, color, notas, agregado_en, actualizado_en)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO animes (id, titulo, estudio, tipo, temporada, eps, vistos, serie, estado, anio, color, notas, imagen_url, agregado_en, actualizado_en)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       input.titulo,
@@ -77,6 +79,7 @@ export async function insertAnime(input: AnimeInput): Promise<Anime> {
       input.anio,
       input.color,
       input.notas ?? null,
+      input.imagen_url ?? null,
       now,
       now,
     ]
@@ -109,6 +112,7 @@ export async function updateAnime(
     'color',
     'notas',
     'rating',
+    'imagen_url',
   ];
 
   for (const col of cols) {

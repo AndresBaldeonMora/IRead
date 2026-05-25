@@ -76,7 +76,7 @@ export default function MangaTabsLayout() {
         <Tabs.Screen
           name="completados"
           options={{
-            title: 'Done',
+            title: 'Yo',
             tabBarIcon: ({ color, size }) => <Sparkles size={size} color={color} />,
           }}
         />

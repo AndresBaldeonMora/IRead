@@ -1,43 +1,63 @@
 import React, { useMemo, useState } from 'react';
-import { View, FlatList, StyleSheet, Text, Pressable, ScrollView, LayoutAnimation, Platform, UIManager } from 'react-native';
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  Text,
+  Pressable,
+  ScrollView,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Library, SlidersHorizontal } from 'lucide-react-native';
+import { Library, Heart, SlidersHorizontal } from 'lucide-react-native';
 import { useBooksStore } from '@/store/books.store';
 import { useColors, useSerifFamily } from '@/store/theme.store';
 import { BookCard } from '@/components/BookCard';
 import { SearchBar } from '@/components/SearchBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { handleSwitcherScroll } from '@/utils/switcherAnim';
-import { Filtro, LeidoFiltro, FormatoFiltro } from '@/types';
-import { FILTROS, LEIDO_FILTROS, FORMATO_FILTROS } from '@/utils/constants';
+import { LeidoFiltro, FormatoFiltro } from '@/types';
+import { LEIDO_FILTROS, FORMATO_FILTROS } from '@/utils/constants';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-export default function MiBibliotecaScreen() {
+type Vista = 'biblioteca' | 'deseos';
+
+export default function PersonalScreen() {
   const c = useColors();
   const serif = useSerifFamily();
   const router = useRouter();
+
+  const [vista, setVista] = useState<Vista>('biblioteca');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filtro, setFiltro] = useState<Filtro>('todos');
   const [leidoFiltro, setLeidoFiltro] = useState<LeidoFiltro>('todos');
   const [formatoFiltro, setFormatoFiltro] = useState<FormatoFiltro>('todos');
   const [busqueda, setBusqueda] = useState('');
 
   const books = useBooksStore((s) => s.books);
   const toggleBook = useBooksStore((s) => s.toggleBook);
+  const moveToLibrary = useBooksStore((s) => s.moveToLibrary);
 
-  const misBiblio = useMemo(() => books.filter((b) => b.coleccion === 'mi_biblioteca'), [books]);
+  const miBiblio = useMemo(
+    () => books.filter((b) => b.coleccion === 'mi_biblioteca'),
+    [books]
+  );
+  const deseos = useMemo(
+    () => books.filter((b) => b.coleccion === 'deseos'),
+    [books]
+  );
+
+  const activeList = vista === 'biblioteca' ? miBiblio : deseos;
 
   const filtered = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
-    return misBiblio
+    return activeList
       .filter((b) => {
-        const esFisico = b.formato !== 'digital';
-        if (filtro === 'tengo' && (!b.tengo || !esFisico)) return false;
-        if (filtro === 'faltan' && (b.tengo || !esFisico)) return false;
         if (leidoFiltro === 'leidos' && !b.leido) return false;
         if (leidoFiltro === 'sin_leer' && b.leido) return false;
         if (formatoFiltro === 'fisico' && b.formato !== 'fisico') return false;
@@ -46,24 +66,23 @@ export default function MiBibliotecaScreen() {
         return b.titulo.toLowerCase().includes(q) || b.autor.toLowerCase().includes(q);
       })
       .sort((a, b) => a.titulo.localeCompare(b.titulo));
-  }, [misBiblio, filtro, leidoFiltro, formatoFiltro, busqueda]);
-
-  const counts = useMemo(() => {
-    const fisicos = misBiblio.filter((b) => b.formato !== 'digital');
-    return {
-      todos: misBiblio.length,
-      tengo: fisicos.filter((b) => b.tengo).length,
-      faltan: fisicos.filter((b) => !b.tengo).length,
-    };
-  }, [misBiblio]);
+  }, [activeList, leidoFiltro, formatoFiltro, busqueda]);
 
   const activeFilterCount = useMemo(() => {
     let n = 0;
-    if (filtro !== 'todos') n++;
     if (leidoFiltro !== 'todos') n++;
     if (formatoFiltro !== 'todos') n++;
     return n;
-  }, [filtro, leidoFiltro, formatoFiltro]);
+  }, [leidoFiltro, formatoFiltro]);
+
+  const switchVista = (v: Vista) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setVista(v);
+    setFiltersOpen(false);
+    setLeidoFiltro('todos');
+    setFormatoFiltro('todos');
+    setBusqueda('');
+  };
 
   const toggleFilters = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -71,18 +90,66 @@ export default function MiBibliotecaScreen() {
   };
 
   const resetFilters = () => {
-    setFiltro('todos');
     setLeidoFiltro('todos');
     setFormatoFiltro('todos');
   };
 
+  const headerTitle = vista === 'biblioteca' ? 'Mi Biblioteca' : 'Deseos';
+  const headerSub =
+    vista === 'biblioteca'
+      ? `${miBiblio.length} libros personales`
+      : `${deseos.length} libros en tu lista de deseos`;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
-      <ScreenHeader
-        title="Mi Biblioteca"
-        subtitle={`${misBiblio.length} libros personales`}
-      />
+      <ScreenHeader title={headerTitle} subtitle={headerSub} />
 
+      {/* Switcher */}
+      <View style={[styles.switcher, { backgroundColor: c.paperCard, borderColor: c.rule }]}>
+        <Pressable
+          onPress={() => switchVista('biblioteca')}
+          style={[
+            styles.switchBtn,
+            vista === 'biblioteca' && { backgroundColor: c.wine },
+          ]}
+        >
+          <Library
+            size={14}
+            color={vista === 'biblioteca' ? c.paperCard : c.inkSoft}
+          />
+          <Text
+            style={[
+              styles.switchTxt,
+              { color: vista === 'biblioteca' ? c.paperCard : c.inkSoft },
+            ]}
+          >
+            Mi Biblioteca
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => switchVista('deseos')}
+          style={[
+            styles.switchBtn,
+            vista === 'deseos' && { backgroundColor: c.wine },
+          ]}
+        >
+          <Heart
+            size={14}
+            color={vista === 'deseos' ? c.paperCard : c.inkSoft}
+          />
+          <Text
+            style={[
+              styles.switchTxt,
+              { color: vista === 'deseos' ? c.paperCard : c.inkSoft },
+            ]}
+          >
+            Deseos
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* Barra de búsqueda + filtros */}
       <View style={styles.controls}>
         <View style={styles.searchRow}>
           <View style={{ flex: 1 }}>
@@ -93,34 +160,36 @@ export default function MiBibliotecaScreen() {
             style={[
               styles.filterToggleBtn,
               {
-                backgroundColor: filtersOpen || activeFilterCount > 0 ? c.wine : c.paperCard,
-                borderColor: filtersOpen || activeFilterCount > 0 ? c.wine : c.rule,
+                backgroundColor:
+                  filtersOpen || activeFilterCount > 0 ? c.wine : c.paperCard,
+                borderColor:
+                  filtersOpen || activeFilterCount > 0 ? c.wine : c.rule,
               },
             ]}
           >
             <SlidersHorizontal
               size={16}
-              color={filtersOpen || activeFilterCount > 0 ? c.paperCard : c.inkSoft}
+              color={
+                filtersOpen || activeFilterCount > 0 ? c.paperCard : c.inkSoft
+              }
             />
             {activeFilterCount > 0 && (
               <View style={[styles.badge, { backgroundColor: c.paperCard }]}>
-                <Text style={[styles.badgeText, { color: c.wine }]}>{activeFilterCount}</Text>
+                <Text style={[styles.badgeText, { color: c.wine }]}>
+                  {activeFilterCount}
+                </Text>
               </View>
             )}
           </Pressable>
         </View>
 
         {filtersOpen && (
-          <View style={[styles.filtersPanel, { backgroundColor: c.paperCard, borderColor: c.rule }]}>
-            <FilterRow
-              label="Estado"
-              options={FILTROS}
-              value={filtro}
-              onChange={(k) => setFiltro(k as Filtro)}
-              counts={counts}
-              c={c}
-            />
-            <View style={styles.divider} />
+          <View
+            style={[
+              styles.filtersPanel,
+              { backgroundColor: c.paperCard, borderColor: c.rule },
+            ]}
+          >
             <FilterRow
               label="Lectura"
               options={LEIDO_FILTROS}
@@ -138,7 +207,9 @@ export default function MiBibliotecaScreen() {
             />
             {activeFilterCount > 0 && (
               <Pressable onPress={resetFilters} style={styles.resetBtn}>
-                <Text style={[styles.resetText, { color: c.wine }]}>Limpiar filtros</Text>
+                <Text style={[styles.resetText, { color: c.wine }]}>
+                  Limpiar filtros
+                </Text>
               </Pressable>
             )}
           </View>
@@ -150,13 +221,23 @@ export default function MiBibliotecaScreen() {
         keyExtractor={(item) => item.id}
         onScroll={handleSwitcherScroll}
         scrollEventThrottle={16}
-        renderItem={({ item }) => (
-          <BookCard
-            book={item}
-            onPress={() => router.push(`/libro/${item.id}`)}
-            onToggle={() => toggleBook(item.id)}
-          />
-        )}
+        renderItem={({ item }) =>
+          vista === 'biblioteca' ? (
+            // Mi Biblioteca: sin botón toggle en la tarjeta
+            <BookCard
+              book={item}
+              onPress={() => router.push(`/libro/${item.id}`)}
+              hideToggle
+            />
+          ) : (
+            // Deseos: al pulsar el círculo, el libro pasa a Mi Biblioteca
+            <BookCard
+              book={item}
+              onPress={() => router.push(`/libro/${item.id}`)}
+              onToggle={() => moveToLibrary(item.id)}
+            />
+          )
+        }
         contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
         removeClippedSubviews
         initialNumToRender={10}
@@ -164,15 +245,41 @@ export default function MiBibliotecaScreen() {
         windowSize={10}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Library size={48} color={c.rose} />
-            <Text style={[styles.emptyTitle, { color: c.wineDeep, fontFamily: serif }]}>
-              Tu biblioteca personal
-            </Text>
-            <Text style={[styles.emptyHint, { color: c.inkSoft }]}>
-              {busqueda || activeFilterCount > 0
-                ? 'Prueba ajustando los filtros'
-                : 'Agrega tu primer libro con el botón +'}
-            </Text>
+            {vista === 'biblioteca' ? (
+              <>
+                <Library size={48} color={c.rose} />
+                <Text
+                  style={[
+                    styles.emptyTitle,
+                    { color: c.wineDeep, fontFamily: serif },
+                  ]}
+                >
+                  Tu biblioteca personal
+                </Text>
+                <Text style={[styles.emptyHint, { color: c.inkSoft }]}>
+                  {busqueda || activeFilterCount > 0
+                    ? 'Prueba ajustando los filtros'
+                    : 'Agrega un libro con el botón + y activa "Ya lo tengo"'}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Heart size={48} color={c.rose} />
+                <Text
+                  style={[
+                    styles.emptyTitle,
+                    { color: c.wineDeep, fontFamily: serif },
+                  ]}
+                >
+                  Sin libros en deseos
+                </Text>
+                <Text style={[styles.emptyHint, { color: c.inkSoft }]}>
+                  {busqueda || activeFilterCount > 0
+                    ? 'Prueba ajustando los filtros'
+                    : 'Agrega un libro con el botón + sin activar "Ya lo tengo"'}
+                </Text>
+              </>
+            )}
           </View>
         }
       />
@@ -185,14 +292,12 @@ function FilterRow({
   options,
   value,
   onChange,
-  counts,
   c,
 }: {
   label: string;
   options: readonly { key: string; label: string }[];
   value: string;
   onChange: (k: string) => void;
-  counts?: Record<string, number>;
   c: ReturnType<typeof useColors>;
 }) {
   return (
@@ -214,9 +319,13 @@ function FilterRow({
                   },
                 ]}
               >
-                <Text style={[styles.filterChipText, { color: active ? c.paperCard : c.inkSoft }]}>
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    { color: active ? c.paperCard : c.inkSoft },
+                  ]}
+                >
                   {opt.label}
-                  {counts ? ` · ${counts[opt.key] ?? 0}` : ''}
                 </Text>
               </Pressable>
             );
@@ -228,6 +337,30 @@ function FilterRow({
 }
 
 const styles = StyleSheet.create({
+  switcher: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    padding: 3,
+    gap: 3,
+  },
+  switchBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 11,
+  },
+  switchTxt: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
   controls: { paddingHorizontal: 16, paddingBottom: 8 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   filterToggleBtn: {
@@ -288,5 +421,5 @@ const styles = StyleSheet.create({
   resetText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.3 },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },
   emptyTitle: { fontSize: 22, fontWeight: '500' },
-  emptyHint: { fontSize: 14, textAlign: 'center' },
+  emptyHint: { fontSize: 14, textAlign: 'center', paddingHorizontal: 24 },
 });

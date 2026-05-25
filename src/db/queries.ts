@@ -71,12 +71,20 @@ export async function getNextNumero(coleccion: string = 'novelas_eternas'): Prom
     );
     return (result?.max ?? 0) + 1;
   }
-  // mi_biblioteca usa un rango separado empezando en 10001
+  if (coleccion === 'mi_biblioteca') {
+    // mi_biblioteca usa un rango separado empezando en 10001
+    const result = await db.getFirstAsync<{ max: number | null }>(
+      "SELECT MAX(numero) as max FROM books WHERE coleccion = 'mi_biblioteca'"
+    );
+    const current = result?.max ?? 10000;
+    return current < 10000 ? 10001 : current + 1;
+  }
+  // deseos usa un rango separado empezando en 20001
   const result = await db.getFirstAsync<{ max: number | null }>(
-    "SELECT MAX(numero) as max FROM books WHERE coleccion = 'mi_biblioteca'"
+    "SELECT MAX(numero) as max FROM books WHERE coleccion = 'deseos'"
   );
-  const current = result?.max ?? 10000;
-  return current < 10000 ? 10001 : current + 1;
+  const current = result?.max ?? 20000;
+  return current < 20000 ? 20001 : current + 1;
 }
 
 export async function insertBook(input: BookInput): Promise<Book> {

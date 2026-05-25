@@ -1,4 +1,4 @@
-export type Coleccion = 'novelas_eternas' | 'mi_biblioteca';
+export type Coleccion = 'novelas_eternas' | 'mi_biblioteca' | 'deseos';
 
 export type SeccionFiltro = Coleccion;
 
@@ -84,6 +84,7 @@ export interface Anime {
   color: string;
   notas: string | null;
   rating: number | null;
+  imagen_url: string | null;
   agregado_en: string;
   actualizado_en: string;
 }

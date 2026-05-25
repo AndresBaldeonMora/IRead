@@ -62,7 +62,6 @@ export function AnimeListView({
         ListHeaderComponent={
           <View>
             <View style={styles.header}>
-              <Text style={styles.eyebrow}>// {eyebrow}</Text>
               <Text style={styles.title}>{title}</Text>
             </View>
 
