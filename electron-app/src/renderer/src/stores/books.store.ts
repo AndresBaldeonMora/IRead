@@ -93,7 +93,9 @@ export const useBooksStore = create<BooksState>((set, get) => ({
   },
 }));
 
-export function selectFilteredBooks(state: BooksState): Book[] {
+export type BooksFilterState = Pick<BooksState, 'books' | 'seccion' | 'filtro' | 'leidoFiltro' | 'formatoFiltro' | 'busqueda'>
+
+export function selectFilteredBooks(state: BooksFilterState): Book[] {
   const q = state.busqueda.trim().toLowerCase();
   return state.books
     .filter((b) => {

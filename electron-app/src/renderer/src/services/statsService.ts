@@ -7,7 +7,8 @@ export function calculateStats(books: Book[]): Stats {
   const faltan = total - tengo
   const porcentaje = total > 0 ? Math.round((tengo / total) * 100) : 0
   const autoresUnicos = new Set(fisicos.map((b) => b.autor.trim()).filter(Boolean)).size
-  return { total, tengo, faltan, porcentaje, autoresUnicos }
+  const leidos = books.filter((b) => b.leido).length
+  return { total, tengo, faltan, porcentaje, autoresUnicos, leidos }
 }
 
 const MESES_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']

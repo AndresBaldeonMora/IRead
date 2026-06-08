@@ -51,6 +51,7 @@ export interface Stats {
   faltan: number;
   porcentaje: number;
   autoresUnicos: number;
+  leidos: number;
 }
 
 export type AnimeEstado = 'viendo' | 'completado' | 'pausado' | 'pendiente';
