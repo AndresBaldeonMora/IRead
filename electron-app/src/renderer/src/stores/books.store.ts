@@ -21,6 +21,7 @@ interface BooksState {
   addBook: (input: Omit<BookInput, 'numero'>) => Promise<Book>;
   updateBook: (id: string, patch: Partial<BookInput>) => Promise<void>;
   deleteBook: (id: string) => Promise<void>;
+  deleteAllByColeccion: (coleccion: string) => Promise<void>;
   moveToLibrary: (id: string) => Promise<void>;
 }
 
@@ -81,6 +82,11 @@ export const useBooksStore = create<BooksState>((set, get) => ({
   deleteBook: async (id) => {
     await db.deleteBook(id);
     set((s) => ({ books: s.books.filter((b) => b.id !== id) }));
+  },
+
+  deleteAllByColeccion: async (coleccion) => {
+    await db.deleteAllBooksByColeccion(coleccion);
+    set((s) => ({ books: s.books.filter((b) => b.coleccion !== coleccion) }));
   },
 
   moveToLibrary: async (id) => {

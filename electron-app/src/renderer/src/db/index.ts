@@ -13,6 +13,10 @@ declare global {
         get: (sql: string, params?: unknown[]) => Promise<unknown>;
         all: (sql: string, params?: unknown[]) => Promise<unknown[]>;
       };
+      dialog: {
+        saveJson: (data: string) => Promise<{ ok: boolean }>;
+        openJson: () => Promise<{ ok: boolean; data: string | null }>;
+      };
     };
   }
 }
@@ -125,6 +129,10 @@ export async function updateBook(id: string, patch: Partial<BookInput>): Promise
 
 export async function deleteBook(id: string): Promise<void> {
   await db.run('DELETE FROM books WHERE id=?', [id]);
+}
+
+export async function deleteAllBooksByColeccion(coleccion: string): Promise<void> {
+  await db.run('DELETE FROM books WHERE coleccion=?', [coleccion]);
 }
 
 // ─── Anime ────────────────────────────────────────────────────────────────────

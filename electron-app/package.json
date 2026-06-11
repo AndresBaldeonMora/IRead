@@ -20,6 +20,7 @@
     "react-router-dom": "^6.26.0",
     "sql.js": "^1.14.1",
     "uuid": "^9.0.1",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
@@ -38,20 +39,20 @@
   "build": {
     "appId": "com.andresbaldeon.mibiblioteca",
     "productName": "Mi Biblioteca",
+    "icon": "splash-icon.ico",
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "splash-icon.ico"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico"
+      "target": "nsis"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.icns"
+      "target": "dmg"
     },
     "nsis": {
       "oneClick": false,

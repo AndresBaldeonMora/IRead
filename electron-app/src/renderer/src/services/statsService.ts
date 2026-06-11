@@ -1,5 +1,16 @@
 import { Book, Stats } from '@/types'
 
+const MESES_LARGO = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+export function formatMesLargo(mes: string): string {
+  const [year, month] = mes.split('-')
+  return `${MESES_LARGO[parseInt(month, 10) - 1] ?? mes} ${year}`
+}
+
+export function librosLeidosPorMes(books: Book[], mes: string): Book[] {
+  return books.filter((b) => b.leido && b.leido_en === mes)
+}
+
 export function calculateStats(books: Book[]): Stats {
   const fisicos = books.filter((b) => b.formato !== 'digital')
   const total = fisicos.length

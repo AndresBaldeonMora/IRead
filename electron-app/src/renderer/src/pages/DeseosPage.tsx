@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, X, Trash2, ArrowRight } from 'lucide-react'
+import { Plus, Search, X, Trash2, ArrowRight, Trash } from 'lucide-react'
 import { useBooksStore } from '@/stores/books.store'
 import { useColors, useSerifFamily } from '@/stores/theme.store'
 import AddBookModal from '@/components/AddBookModal'
+import ConfirmDialog from '@/components/ConfirmDialog'
 import type { Coleccion } from '@/types'
 
 const TABS: { key: Coleccion; label: string }[] = [
@@ -20,13 +21,15 @@ export default function DeseosPage() {
   const addBook = useBooksStore((s) => s.addBook)
   const moveToLibrary = useBooksStore((s) => s.moveToLibrary)
   const deleteBook = useBooksStore((s) => s.deleteBook)
+  const deleteAllByColeccion = useBooksStore((s) => s.deleteAllByColeccion)
   const toggleRead = useBooksStore((s) => s.toggleRead)
 
   const [tab, setTab] = useState<Coleccion>('mi_biblioteca')
   const [busqueda, setBusqueda] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [dialog, setDialog] = useState<{ message: string; onConfirm: () => void } | null>(null)
 
-  const countByTab = useMemo(() => ({
+  const countByTab = useMemo((): Record<string, number> => ({
     mi_biblioteca: books.filter((b) => b.coleccion === 'mi_biblioteca').length,
     deseos: books.filter((b) => b.coleccion === 'deseos').length,
   }), [books])
@@ -38,15 +41,34 @@ export default function DeseosPage() {
       .filter((b) => !q || b.titulo.toLowerCase().includes(q) || b.autor.toLowerCase().includes(q))
   }, [books, tab, busqueda])
 
-  const handleDelete = async (e: React.MouseEvent, id: string, titulo: string) => {
+  const handleDelete = (e: React.MouseEvent, id: string, titulo: string) => {
     e.stopPropagation()
-    if (confirm(`¿Eliminar "${titulo}"?`)) {
-      await deleteBook(id)
-    }
+    setDialog({
+      message: `¿Eliminar "${titulo}"?`,
+      onConfirm: () => deleteBook(id),
+    })
+  }
+
+  const handleDeleteAll = () => {
+    const label = tab === 'mi_biblioteca' ? 'Mi Biblioteca' : 'Lista de Deseos'
+    const n = countByTab[tab]
+    setDialog({
+      message: `¿Eliminar todos los ${n} libros de ${label}? Esta acción no se puede deshacer.`,
+      onConfirm: () => deleteAllByColeccion(tab),
+    })
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {dialog && (
+        <ConfirmDialog
+          message={dialog.message}
+          confirmLabel="Eliminar"
+          danger
+          onConfirm={() => { dialog.onConfirm(); setDialog(null) }}
+          onCancel={() => setDialog(null)}
+        />
+      )}
 
       {/* Header fijo */}
       <div style={{ padding: '28px 36px 0', background: c.paper, flexShrink: 0 }}>
@@ -56,16 +78,31 @@ export default function DeseosPage() {
           <h1 style={{ fontFamily: serif, fontSize: 32, fontWeight: 500, color: c.wineDeep, margin: 0 }}>
             Personal
           </h1>
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              background: c.wine, color: '#fff', borderRadius: 10, padding: '9px 18px',
-              display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            <Plus size={15} /> Agregar
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {countByTab[tab] > 0 && (
+              <button
+                onClick={handleDeleteAll}
+                title={`Eliminar toda la ${tab === 'mi_biblioteca' ? 'biblioteca' : 'lista de deseos'}`}
+                style={{
+                  background: 'transparent', color: c.inkSoft, borderRadius: 10, padding: '9px 14px',
+                  display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 500,
+                  cursor: 'pointer', border: `1px solid ${c.rule}`,
+                }}
+              >
+                <Trash size={14} /> Eliminar lista
+              </button>
+            )}
+            <button
+              onClick={() => setShowModal(true)}
+              style={{
+                background: c.wine, color: '#fff', borderRadius: 10, padding: '9px 18px',
+                display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <Plus size={15} /> Agregar
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -228,7 +265,6 @@ export default function DeseosPage() {
 
       {showModal && (
         <AddBookModal
-          coleccion={tab}
           onClose={() => setShowModal(false)}
           onSave={async (input) => { await addBook(input); setShowModal(false) }}
         />

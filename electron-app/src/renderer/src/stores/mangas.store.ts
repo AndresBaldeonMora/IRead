@@ -66,7 +66,9 @@ export const useMangasStore = create<MangasState>((set, get) => ({
   },
 }));
 
-export function selectFilteredMangas(state: MangasState): Manga[] {
+export type MangasFilterState = Pick<MangasState, 'mangas' | 'filtro' | 'tipoFiltro' | 'busqueda'>
+
+export function selectFilteredMangas(state: MangasFilterState): Manga[] {
   const q = state.busqueda.trim().toLowerCase();
   return state.mangas.filter((m) => {
     if (state.filtro !== 'todos' && m.estado !== state.filtro) return false;

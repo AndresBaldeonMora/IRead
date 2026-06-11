@@ -14,6 +14,7 @@ import AnimeDetallePage from '@/pages/anime/AnimeDetallePage'
 import MangaListPage from '@/pages/manga/MangaListPage'
 import MangaDetallePage from '@/pages/manga/MangaDetallePage'
 import LibroDetallePage from '@/pages/LibroDetallePage'
+import PerfilPage from '@/pages/PerfilPage'
 
 export default function App() {
   const [ready, setReady] = useState(false)
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="/manga" element={<MangaListPage />} />
           <Route path="/manga/:id" element={<MangaDetallePage />} />
           <Route path="/libro/:id" element={<LibroDetallePage />} />
+          <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/ajustes" element={<AjustesPage />} />
         </Route>
       </Routes>

@@ -76,7 +76,9 @@ export const useAnimesStore = create<AnimesState>((set, get) => ({
   },
 }));
 
-export function selectFilteredAnimes(state: AnimesState): Anime[] {
+export type AnimesFilterState = Pick<AnimesState, 'animes' | 'filtro' | 'busqueda'>
+
+export function selectFilteredAnimes(state: AnimesFilterState): Anime[] {
   const q = state.busqueda.trim().toLowerCase();
   return state.animes.filter((a) => {
     if (state.filtro !== 'todos' && a.estado !== state.filtro) return false;

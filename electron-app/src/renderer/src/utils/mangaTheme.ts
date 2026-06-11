@@ -14,12 +14,17 @@ export const MANGA = {
 };
 
 export const MANGA_STATUS: Record<MangaEstado, { label: string; bg: string; text: string }> = {
-  leyendo:    { label: 'Leyendo',     bg: '#B85042', text: '#FFF7EC' },
-  completado: { label: 'Completado',  bg: '#D4A02C', text: '#3A2614' },
-  pausado:    { label: 'Pausado',     bg: '#8C7B6B', text: '#FFF7EC' },
-  pendiente:  { label: 'Pendiente',   bg: '#A87B5D', text: '#FFF7EC' },
+  leyendo:    { label: 'Leyendo',    bg: '#B85042', text: '#FFF7EC' },
+  completado: { label: 'Completado', bg: '#D4A02C', text: '#3A2614' },
+  pausado:    { label: 'Pausado',    bg: '#8C7B6B', text: '#FFF7EC' },
+  pendiente:  { label: 'Pendiente',  bg: '#A87B5D', text: '#FFF7EC' },
 };
 
 export function tipoLabel(tipo: MangaTipo): string {
   return tipo === 'manwha' ? 'Manwha' : 'Manga';
+}
+
+/** Hard-offset shadow with no blur — faithful manga panel aesthetic */
+export function hardShadow(dx = 3, dy = 3, color = MANGA.ink): string {
+  return `${dx}px ${dy}px 0 ${color}`;
 }

@@ -1,24 +1,24 @@
 import { useColors, useSerifFamily } from '@/stores/theme.store'
 
-interface Props { value: number; label: string; accent: 'wine' | 'rose' | 'gold' | 'wineDeep' }
+interface Props { value: number; label: string; accent?: 'wine' | 'rose' | 'gold' | 'wineDeep' }
 
-export default function StatCard({ value, label, accent }: Props) {
+export default function StatCard({ value, label, accent = 'wine' }: Props) {
   const c = useColors()
   const serif = useSerifFamily()
   const color = accent === 'wine' ? c.wine : accent === 'rose' ? c.rose : accent === 'gold' ? c.gold : c.wineDeep
 
   return (
     <div style={{
-      flex: 1, minWidth: 100, background: c.paperCard, borderRadius: 14,
-      padding: '16px 18px', border: `1px solid ${c.rule}`,
-      borderLeft: `4px solid ${color}`,
+      flex: 1, padding: 14, borderRadius: 16,
+      background: c.paperCard, border: `0.5px solid ${c.rule}`,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
     }}>
-      <div style={{ fontFamily: serif, fontSize: 34, fontWeight: 600, color, lineHeight: 1 }}>
+      <span style={{ fontFamily: serif, fontSize: 32, fontWeight: 500, lineHeight: '34px', color }}>
         {value}
-      </div>
-      <div style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: c.inkSoft, marginTop: 6 }}>
+      </span>
+      <span style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: c.inkSoft, textAlign: 'center' }}>
         {label}
-      </div>
+      </span>
     </div>
   )
 }

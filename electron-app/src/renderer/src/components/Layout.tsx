@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { Home, BookOpen, Heart, Tv, BookMarked, Settings } from 'lucide-react'
+import { Home, BookOpen, Heart, Tv, BookMarked, User, Settings } from 'lucide-react'
 import { useColors, useSerifFamily } from '@/stores/theme.store'
 
 const NAV = [
@@ -8,6 +8,7 @@ const NAV = [
   { to: '/deseos',     icon: Heart,      label: 'Personal' },
   { to: '/anime',      icon: Tv,         label: 'Anime' },
   { to: '/manga',      icon: BookMarked, label: 'Manga' },
+  { to: '/perfil',     icon: User,       label: 'Mi rincón' },
   { to: '/ajustes',    icon: Settings,   label: 'Ajustes' },
 ]
 
