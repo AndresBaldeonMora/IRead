@@ -15,6 +15,10 @@ import AnimeDetallePage from '@/pages/anime/AnimeDetallePage'
 import MangaDashboardPage from '@/pages/manga/MangaDashboardPage'
 import MangaListPage from '@/pages/manga/MangaListPage'
 import MangaDetallePage from '@/pages/manga/MangaDetallePage'
+import MangaLeyendoPage from '@/pages/manga/MangaLeyendoPage'
+import MangaCompletadosPage from '@/pages/manga/MangaCompletadosPage'
+import AnimeValorarPage from '@/pages/anime/AnimeValorarPage'
+import AnimeCompletadosPage from '@/pages/anime/AnimeCompletadosPage'
 import LibroDetallePage from '@/pages/LibroDetallePage'
 import PerfilPage from '@/pages/PerfilPage'
 
@@ -61,9 +65,13 @@ export default function App() {
           <Route path="/deseos" element={<DeseosPage />} />
           <Route path="/anime" element={<AnimeDashboardPage />} />
           <Route path="/anime/lista" element={<AnimeListPage />} />
+          <Route path="/anime/valorar" element={<AnimeValorarPage />} />
+          <Route path="/anime/completados" element={<AnimeCompletadosPage />} />
           <Route path="/anime/:id" element={<AnimeDetallePage />} />
           <Route path="/manga" element={<MangaDashboardPage />} />
           <Route path="/manga/lista" element={<MangaListPage />} />
+          <Route path="/manga/leyendo" element={<MangaLeyendoPage />} />
+          <Route path="/manga/completados" element={<MangaCompletadosPage />} />
           <Route path="/manga/:id" element={<MangaDetallePage />} />
           <Route path="/libro/:id" element={<LibroDetallePage />} />
           <Route path="/perfil" element={<PerfilPage />} />
