@@ -8,10 +8,10 @@ import {
   StyleSheet,
   ScrollView,
   Switch,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useAppAlert } from '@/components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, BookOpen, Calendar } from 'lucide-react-native';
 import { useColors, useSerifFamily } from '@/store/theme.store';
@@ -44,6 +44,7 @@ export function AddBookModal({ visible, onClose, bookToEdit }: Props) {
   const [selectedGeneros, setSelectedGeneros] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [mesSheet, setMesSheet] = useState<{ visible: boolean; mes: string; label: string } | null>(null);
+  const { showAlert, AlertNode } = useAppAlert();
 
   useEffect(() => {
     if (bookToEdit) {
@@ -96,7 +97,7 @@ export function AddBookModal({ visible, onClose, bookToEdit }: Props) {
 
   const handleSave = async () => {
     if (!titulo.trim()) {
-      Alert.alert('Falta el título', 'Necesitamos saber qué libro es.');
+      showAlert({ title: 'Falta el título', message: 'Necesitamos saber qué libro es.', icon: '📖' });
       return;
     }
     setSaving(true);
@@ -137,7 +138,7 @@ export function AddBookModal({ visible, onClose, bookToEdit }: Props) {
       }
       onClose();
     } catch (e) {
-      Alert.alert('Error', 'No se pudo guardar el libro.');
+      showAlert({ title: 'Error', message: 'No se pudo guardar el libro.', icon: '❌' });
       console.error(e);
     } finally {
       setSaving(false);
@@ -152,6 +153,7 @@ export function AddBookModal({ visible, onClose, bookToEdit }: Props) {
       presentationStyle="pageSheet"
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
+        {AlertNode}
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}

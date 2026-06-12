@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, View, Text, Pressable, ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import { useAppAlert } from '@/components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { BookOpen, Download, Upload } from 'lucide-react-native';
@@ -23,25 +24,28 @@ export default function PerfilScreen() {
   const loadMangas = useMangasStore((s) => s.loadMangas);
 
   const [respaldando, setRespaldando] = useState(false);
+  const { showAlert, AlertNode } = useAppAlert();
 
   const handleExportar = async () => {
     if (respaldando) return;
     setRespaldando(true);
     try {
       const r = await exportarDatos();
-      if (!r.ok) Alert.alert('Exportar', r.mensaje);
+      if (!r.ok) showAlert({ title: 'Exportar', message: r.mensaje, icon: '⚠️' });
+      else showAlert({ title: 'Exportar', message: '¡Listo! Datos exportados correctamente.', icon: '✅' });
     } catch {
-      Alert.alert('Exportar', 'Ocurrió un error al exportar');
+      showAlert({ title: 'Exportar', message: 'Ocurrió un error al exportar.', icon: '❌' });
     } finally {
       setRespaldando(false);
     }
   };
 
   const handleImportar = () => {
-    Alert.alert(
-      'Importar respaldo',
-      'Esto reemplazará TODOS tus datos actuales (libros, animes y mangas) por los del archivo. ¿Continuar?',
-      [
+    showAlert({
+      title: 'Importar respaldo',
+      message: 'Esto reemplazará TODOS tus datos actuales (libros, animes y mangas) por los del archivo. ¿Continuar?',
+      icon: '📂',
+      buttons: [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Importar',
@@ -52,19 +56,19 @@ export default function PerfilScreen() {
               const r = await importarDatos();
               if (r.ok) {
                 await Promise.all([loadBooks(), loadAnimes(), loadMangas()]);
-                Alert.alert('Importar', `Listo. ${r.mensaje}.`);
+                showAlert({ title: 'Importar', message: `¡Listo! ${r.mensaje}.`, icon: '✅' });
               } else {
-                Alert.alert('Importar', r.mensaje);
+                showAlert({ title: 'Importar', message: r.mensaje, icon: '⚠️' });
               }
             } catch {
-              Alert.alert('Importar', 'Ocurrió un error al importar');
+              showAlert({ title: 'Importar', message: 'Ocurrió un error al importar.', icon: '❌' });
             } finally {
               setRespaldando(false);
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const meses = useMemo(() => lecturasPorMes(books), [books]);
@@ -82,6 +86,7 @@ export default function PerfilScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
+      {AlertNode}
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false} onScroll={handleSwitcherScroll} scrollEventThrottle={16}>
         <ScreenHeader title="Mi rincón" subtitle="Lectora apasionada" />
 

@@ -21,7 +21,7 @@ export default function PerfilPage() {
   const [dialog, setDialog] = useState(false)
 
   const totalLeidos = useMemo(() => books.filter((b) => b.leido).length, [books])
-  const totalDigital = useMemo(() => books.filter((b) => b.formato === 'digital').length, [books])
+  const totalDigital = useMemo(() => books.filter((b) => b.leido && b.formato === 'digital').length, [books])
   const mesData = useMemo(() => lecturasPorMes(books), [books])
   const librosDelMes = useMemo(
     () => selectedMes ? librosLeidosPorMes(books, selectedMes) : [],

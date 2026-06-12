@@ -5,9 +5,9 @@ import {
   Text,
   Pressable,
   TextInput,
-  Alert,
   StyleSheet,
 } from 'react-native';
+import { useAppAlert } from '@/components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, BookOpen, Check, Trash2, Save, Smartphone, Pencil } from 'lucide-react-native';
@@ -31,6 +31,7 @@ export default function BookDetail() {
   const [notas, setNotas] = useState(book?.notas ?? '');
   const [dirty, setDirty] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
+  const { showAlert, AlertNode } = useAppAlert();
 
   useEffect(() => {
     setNotas(book?.notas ?? '');
@@ -58,10 +59,11 @@ export default function BookDetail() {
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Eliminar libro',
-      `¿Seguro que quieres eliminar "${book.titulo}"?`,
-      [
+    showAlert({
+      title: 'Eliminar libro',
+      message: `¿Seguro que quieres eliminar "${book.titulo}"?`,
+      icon: '🗑️',
+      buttons: [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Eliminar',
@@ -71,8 +73,8 @@ export default function BookDetail() {
             router.back();
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleToggleRead = () => {
@@ -85,25 +87,27 @@ export default function BookDetail() {
     const mesLabel = ahora.toLocaleString('es', { month: 'long', year: 'numeric' });
     const mesISO = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
 
-    Alert.alert(
-      '¡Libro terminado! 🎉',
-      `¿Quieres guardar ${mesLabel} como el mes en que lo leíste?`,
-      [
-        {
-          text: 'Sí, guardar mes',
-          onPress: () => toggleRead(book.id, mesISO),
-        },
+    showAlert({
+      title: '¡Libro terminado!',
+      message: `¿Quieres guardar ${mesLabel} como el mes en que lo leíste?`,
+      icon: '🎉',
+      buttons: [
         {
           text: 'Solo marcar como leído',
           style: 'cancel',
           onPress: () => toggleRead(book.id, null),
         },
-      ]
-    );
+        {
+          text: 'Sí, guardar mes',
+          onPress: () => toggleRead(book.id, mesISO),
+        },
+      ],
+    });
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top']}>
+      {AlertNode}
       <View style={styles.headerBar}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <ChevronLeft size={28} color={c.ink} />

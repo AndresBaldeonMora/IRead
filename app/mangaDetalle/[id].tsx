@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, Pressable, TextInput, Alert, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Pressable, TextInput, StyleSheet } from 'react-native';
+import { useAppAlert } from '@/components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +21,7 @@ export default function MangaDetail() {
   const advanceManga = useMangasStore((s) => s.advanceManga);
 
   const [notas, setNotas] = useState(manga?.notas ?? '');
+  const { showAlert, AlertNode } = useAppAlert();
 
   useEffect(() => {
     setNotas(manga?.notas ?? '');
@@ -46,17 +48,22 @@ export default function MangaDetail() {
   const pct = m.total ? Math.round((m.leidos / m.total) * 100) : 0;
 
   const handleDelete = () => {
-    Alert.alert('Eliminar manga', `¿Eliminar "${m.titulo}" de la lista?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteManga(m.id);
-          router.back();
+    showAlert({
+      title: 'Eliminar manga',
+      message: `¿Eliminar "${m.titulo}" de la lista?`,
+      icon: '🗑️',
+      buttons: [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteManga(m.id);
+            router.back();
+          },
         },
-      },
-    ]);
+      ],
+    });
   };
 
   const saveNotas = () => {
@@ -70,6 +77,7 @@ export default function MangaDetail() {
 
   return (
     <View style={{ flex: 1 }}>
+      {AlertNode}
       <LinearGradient colors={[MANGA.bgTop, MANGA.bgBottom]} style={StyleSheet.absoluteFill} />
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <StatusBar style="dark" />

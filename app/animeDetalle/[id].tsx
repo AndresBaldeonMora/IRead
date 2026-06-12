@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, Pressable, TextInput, Alert, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, View, Text, Pressable, TextInput, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { useAppAlert } from '@/components/AppAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -19,6 +20,7 @@ export default function AnimeDetail() {
   const advanceEp = useAnimesStore((s) => s.advanceEp);
 
   const [notas, setNotas] = useState(anime?.notas ?? '');
+  const { showAlert, AlertNode } = useAppAlert();
 
   useEffect(() => {
     setNotas(anime?.notas ?? '');
@@ -41,17 +43,22 @@ export default function AnimeDetail() {
   const pct = anime.eps ? Math.round((anime.vistos / anime.eps) * 100) : 0;
 
   const handleDelete = () => {
-    Alert.alert('Eliminar anime', `¿Eliminar "${anime.titulo}" de la lista?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteAnime(anime.id);
-          router.back();
+    showAlert({
+      title: 'Eliminar anime',
+      message: `¿Eliminar "${anime.titulo}" de la lista?`,
+      icon: '🗑️',
+      buttons: [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteAnime(anime.id);
+            router.back();
+          },
         },
-      },
-    ]);
+      ],
+    });
   };
 
   const saveNotas = () => {
@@ -62,6 +69,7 @@ export default function AnimeDetail() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: ANIME.bg }} edges={['top']}>
+      {AlertNode}
       <StatusBar style="light" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
