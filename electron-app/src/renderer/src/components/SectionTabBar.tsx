@@ -9,6 +9,7 @@ import { useBooksStore } from '@/stores/books.store'
 import AnimeAddModal from '@/components/anime/AnimeAddModal'
 import MangaAddModal from '@/components/manga/MangaAddModal'
 import AddBookModal from '@/components/AddBookModal'
+import SectionSplash, { type SplashSection } from '@/components/SectionSplash'
 import type { AnimeInput, MangaInput, BookInput } from '@/types'
 
 // ─── Section detection ────────────────────────────────────────────────────────
@@ -121,22 +122,15 @@ export default function SectionTabBar() {
   const [showMangaModal, setShowMangaModal] = useState(false)
   const [showBookModal,  setShowBookModal]  = useState(false)
 
-  // Transition overlay
-  const [overlay, setOverlay] = useState<{ color: string; opacity: number } | null>(null)
-  const overlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => () => { if (overlayTimer.current) clearTimeout(overlayTimer.current) }, [])
+  // Section splash
+  const [splash, setSplash] = useState<{ section: SplashSection; navigateFn: () => void } | null>(null)
 
   const goSection = (target: Section, path: string) => {
     if (target === section) { navigate(path); return }
-    const color = SECTION_THEME[target].splashColor
-    setOverlay({ color, opacity: 1 })
-    navigate(path)
-    // Brief flash then fade out
-    overlayTimer.current = setTimeout(() => {
-      setOverlay((o) => o ? { ...o, opacity: 0 } : null)
-      overlayTimer.current = setTimeout(() => setOverlay(null), 350)
-    }, 60)
+    setSplash({
+      section: target as SplashSection,
+      navigateFn: () => navigate(path),
+    })
   }
 
   const openAdd = () => {
@@ -162,28 +156,32 @@ export default function SectionTabBar() {
     boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
   }
 
-  const segStyle = (active: boolean, seg: typeof SECTION_THEME['books']): React.CSSProperties => ({
+  // Pill bg is dark only when current section is anime
+  const pillIsDark = section === 'anime'
+  const inactiveColor = pillIsDark ? 'rgba(255,255,255,0.42)' : 'rgba(30,10,10,0.38)'
+
+  const segStyle = (active: boolean, seg: typeof SECTION_THEME['books'], targetSection: Section): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', gap: 5,
     padding: '7px 12px', cursor: 'pointer', border: 'none',
     borderRadius: section === 'manga' ? 2 : 999,
     background: active ? seg.activeColor : 'transparent',
-    color: active ? (section === 'manga' ? MANGA.paper : section === 'anime' ? '#EDE8D5' : '#FFFFFF') : seg.inactiveColor,
+    color: active
+      ? (targetSection === 'manga' ? MANGA.paper : targetSection === 'anime' ? '#EDE8D5' : '#FFFFFF')
+      : inactiveColor,
     fontSize: 11.5, fontWeight: 700, letterSpacing: 0.4,
-    boxShadow: active && section !== 'manga' ? `0 0 8px ${seg.activeColor}99` : 'none',
+    boxShadow: active && targetSection !== 'manga' ? `0 0 8px ${seg.activeColor}99` : 'none',
     transition: 'all 0.15s',
   })
 
   return (
     <>
-      {/* Transition overlay */}
-      {overlay && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          background: overlay.color,
-          opacity: overlay.opacity,
-          transition: 'opacity 0.35s ease',
-          pointerEvents: 'none',
-        }} />
+      {/* Section splash transition */}
+      {splash && (
+        <SectionSplash
+          section={splash.section}
+          onNavigate={splash.navigateFn}
+          onHide={() => setSplash(null)}
+        />
       )}
 
       {/* Anime add modal */}
@@ -224,7 +222,7 @@ export default function SectionTabBar() {
             {/* Books segment */}
             <button
               onClick={() => goSection('books', '/inicio')}
-              style={segStyle(section === 'books', SECTION_THEME['books'])}
+              style={segStyle(section === 'books', SECTION_THEME['books'], 'books')}
             >
               <BookOpen size={13} strokeWidth={2} />
               Libros
@@ -233,7 +231,7 @@ export default function SectionTabBar() {
             {/* Anime segment */}
             <button
               onClick={() => goSection('anime', '/anime')}
-              style={segStyle(section === 'anime', SECTION_THEME['anime'])}
+              style={segStyle(section === 'anime', SECTION_THEME['anime'], 'anime')}
             >
               <Play
                 size={13} strokeWidth={2}
@@ -245,7 +243,7 @@ export default function SectionTabBar() {
             {/* Manga segment */}
             <button
               onClick={() => goSection('manga', '/manga')}
-              style={segStyle(section === 'manga', SECTION_THEME['manga'])}
+              style={segStyle(section === 'manga', SECTION_THEME['manga'], 'manga')}
             >
               <BookMarked size={13} strokeWidth={2} />
               Manga

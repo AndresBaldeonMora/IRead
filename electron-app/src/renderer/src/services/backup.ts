@@ -55,7 +55,7 @@ export async function importarDatos(): Promise<boolean> {
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [b.id, b.numero, b.titulo, b.autor, b.fecha_salida,
        b.tengo ? 1 : 0, b.leido ? 1 : 0, b.leido_en,
-       b.coleccion, b.formato, JSON.stringify(b.generos),
+       b.coleccion, b.formato, (b.generos ?? []).join(','),
        b.agregado_en, b.actualizado_en, b.notas,
        b.imagen_url, b.editorial, b.edicion, b.idioma]
     )
