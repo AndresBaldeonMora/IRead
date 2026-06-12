@@ -9,8 +9,10 @@ import HomePage from '@/pages/HomePage'
 import BibliotecaPage from '@/pages/BibliotecaPage'
 import DeseosPage from '@/pages/DeseosPage'
 import AjustesPage from '@/pages/AjustesPage'
+import AnimeDashboardPage from '@/pages/anime/AnimeDashboardPage'
 import AnimeListPage from '@/pages/anime/AnimeListPage'
 import AnimeDetallePage from '@/pages/anime/AnimeDetallePage'
+import MangaDashboardPage from '@/pages/manga/MangaDashboardPage'
 import MangaListPage from '@/pages/manga/MangaListPage'
 import MangaDetallePage from '@/pages/manga/MangaDetallePage'
 import LibroDetallePage from '@/pages/LibroDetallePage'
@@ -57,9 +59,11 @@ export default function App() {
           <Route path="/inicio" element={<HomePage />} />
           <Route path="/biblioteca" element={<BibliotecaPage />} />
           <Route path="/deseos" element={<DeseosPage />} />
-          <Route path="/anime" element={<AnimeListPage />} />
+          <Route path="/anime" element={<AnimeDashboardPage />} />
+          <Route path="/anime/lista" element={<AnimeListPage />} />
           <Route path="/anime/:id" element={<AnimeDetallePage />} />
-          <Route path="/manga" element={<MangaListPage />} />
+          <Route path="/manga" element={<MangaDashboardPage />} />
+          <Route path="/manga/lista" element={<MangaListPage />} />
           <Route path="/manga/:id" element={<MangaDetallePage />} />
           <Route path="/libro/:id" element={<LibroDetallePage />} />
           <Route path="/perfil" element={<PerfilPage />} />

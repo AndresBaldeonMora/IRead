@@ -156,3 +156,32 @@ export function TypeBadge({ tipo, size = 'sm' }: { tipo: MangaTipo; size?: 'sm' 
     </span>
   )
 }
+
+/** Manga-paneled section title with optional kana label */
+export function MSectionTitle({ children, kana }: { children: React.ReactNode; kana?: string }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+      paddingBottom: 6, marginBottom: 14,
+      borderBottom: `2px solid ${MANGA.ink}`,
+    }}>
+      <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, color: MANGA.ink }}>
+        {children}
+      </span>
+      {kana && (
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: MANGA.terracotta, textTransform: 'uppercase' as const }}>
+          {kana}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/** Reusable bordered "panel" card style with hard shadow */
+export function panelStyle(shadowDx = 4, shadowDy = 4): React.CSSProperties {
+  return {
+    background: MANGA.paper,
+    border: `2px solid ${MANGA.ink}`,
+    boxShadow: hardShadow(shadowDx, shadowDy),
+  }
+}

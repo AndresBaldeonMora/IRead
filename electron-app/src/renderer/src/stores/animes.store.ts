@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { Anime, AnimeInput, AnimeFiltro } from '@/types';
 import * as db from '@/db';
+import { searchAnime } from '@/services/jikan';
 
 interface AnimesState {
   animes: Anime[];
   loaded: boolean;
   filtro: AnimeFiltro;
   busqueda: string;
+  descargandoPortadas: boolean;
   setFiltro: (filtro: AnimeFiltro) => void;
   setBusqueda: (q: string) => void;
   loadAnimes: () => Promise<void>;
@@ -15,6 +17,8 @@ interface AnimesState {
   deleteAnime: (id: string) => Promise<void>;
   advanceEp: (id: string, delta?: number) => Promise<void>;
   setRating: (id: string, rating: number | null) => Promise<void>;
+  fetchImageForAnime: (id: string) => Promise<boolean>;
+  fetchMissingImages: () => Promise<{ done: number; total: number }>;
 }
 
 export const useAnimesStore = create<AnimesState>((set, get) => ({
@@ -22,6 +26,7 @@ export const useAnimesStore = create<AnimesState>((set, get) => ({
   loaded: false,
   filtro: 'todos',
   busqueda: '',
+  descargandoPortadas: false,
 
   setFiltro: (filtro) => set({ filtro }),
   setBusqueda: (busqueda) => set({ busqueda }),
@@ -73,6 +78,36 @@ export const useAnimesStore = create<AnimesState>((set, get) => ({
     } catch {
       await get().loadAnimes();
     }
+  },
+
+  fetchImageForAnime: async (id) => {
+    const anime = get().animes.find((a) => a.id === id);
+    if (!anime) return false;
+    try {
+      const results = await searchAnime(anime.titulo);
+      const match = results.find((r) => r.imageUrl);
+      if (!match?.imageUrl) return false;
+      await get().updateAnime(id, { imagen_url: match.imageUrl });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  fetchMissingImages: async () => {
+    const pendientes = get().animes.filter((a) => !a.imagen_url);
+    set({ descargandoPortadas: true });
+    let done = 0;
+    try {
+      for (const a of pendientes) {
+        const ok = await get().fetchImageForAnime(a.id);
+        if (ok) done++;
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    } finally {
+      set({ descargandoPortadas: false });
+    }
+    return { done, total: pendientes.length };
   },
 }));
 
